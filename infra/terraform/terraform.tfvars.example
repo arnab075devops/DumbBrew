@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and fill in. Never commit terraform.tfvars (it's
+# gitignored at the repo root already).
+
+tenancy_ocid     = "ocid1.tenancy.oc1..xxxxx"
+user_ocid        = "ocid1.user.oc1..xxxxx"
+fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path = "~/.oci/oci_api_key.pem"
+region           = "us-ashburn-1"
+compartment_ocid = "ocid1.compartment.oc1..xxxxx"
+
+ssh_public_key   = "ssh-ed25519 AAAA... you@yourmachine"
+ssh_allowed_cidr = "203.0.113.4/32" # restrict to your IP in production
+
+object_storage_namespace = "axxxxxxxxxx" # from: oci os ns get
+
+git_repo_url = "https://github.com/<you>/dumbbrew.git"
+git_branch   = "main"

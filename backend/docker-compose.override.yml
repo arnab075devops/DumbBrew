@@ -1,0 +1,31 @@
+# Auto-loaded by `docker compose up` alongside docker-compose.yml — local
+# dev convenience only. Never used in production (the DevOps deploy scripts
+# invoke compose with explicit `-f docker-compose.yml -f docker-compose.prod.yml`,
+# which does NOT include this file).
+name: dumbbrew
+
+services:
+  # Exposed directly on localhost so you can hit each service without going
+  # through the gateway while developing.
+  auth-service:
+    ports:
+      - "4001:4001"
+
+  content-service:
+    ports:
+      - "4002:4002"
+
+  # Reachable at http://localhost:3000 locally (production binds it to
+  # 127.0.0.1 on the VM only, reached via SSH tunnel instead).
+  grafana:
+    ports:
+      - "3001:3000"
+
+  # node-exporter/cadvisor read host /proc, /sys, and the Docker socket —
+  # meaningful signal on the real Ampere VM, mostly noise (and sometimes
+  # broken) under Docker Desktop on Windows/Mac. Disabled for local dev.
+  node-exporter:
+    profiles: ["monitoring-host"]
+
+  cadvisor:
+    profiles: ["monitoring-host"]

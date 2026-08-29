@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+body { margin: 0; background: #ded2bb; }
+a { color: #8a5527; }
+a:hover { color: #7d8a4c; }
+@keyframes lineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<section style="font-family:'Poppins',sans-serif; padding:56px; display:flex; flex-direction:column; gap:64px;">
+
+  <div style="font-family:'Playfair Display',serif; font-size:34px; font-weight:700; color:#17100a;">Hero directions &mdash; DumbBrew</div>
+
+  <!-- 1a -->
+  <div id="1a" style="display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="background:#17100a; color:#f0e5d1; font-size:13px; font-weight:600; letter-spacing:2px; padding:6px 12px;">1a</span>
+      <span style="font-size:15px; color:#3b2414; font-weight:500;">Full-bleed image with centered overlay</span>
+    </div>
+    <div style="width:1200px; background:#17100a; color:#f0e5d1; position:relative; overflow:hidden;">
+      <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, #3b2414, #3b2414 22px, #241a10 22px, #241a10 44px);"></div>
+      <div style="position:absolute; inset:0; background:linear-gradient(180deg, #17100a55 0%, #17100acc 100%);"></div>
+      <div style="position:absolute; top:26px; left:26px; font-family:monospace; font-size:11px; color:#f0e5d1aa; background:#17100a99; padding:5px 10px;">full-bleed hero photo</div>
+      <div style="position:relative; padding:150px 72px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:28px;">Est. 2019 &middot; Portland</div>
+        <h1 style="font-family:'Playfair Display',serif; font-size:82px; line-height:1.02; font-weight:900; margin:0 0 28px; max-width:900px; letter-spacing:-1.5px;">Coffee that doesn't take itself <span style="font-style:italic; font-weight:500; color:#c99a54;">too seriously.</span></h1>
+        <p style="font-size:19px; line-height:1.8; color:#f0e5d1bb; margin:0 0 44px; font-weight:300; max-width:560px;">Slow-roasted beans, bread out of the oven before sunrise, and a bar staff who will make fun of your oat-milk order.</p>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+          <a href="#" style="text-decoration:none; padding:22px 48px; background:#c99a54; color:#17100a; font-weight:700; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">Order Online</a>
+          <a href="#" style="text-decoration:none; padding:22px 48px; border:1px solid #f0e5d155; color:#f0e5d1; font-weight:500; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">Find Us</a>
+        </div>
+        <sc-if value="{{ showFeaturedCard }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:64px; display:flex; align-items:stretch; gap:0; background:#f0e5d1; color:#17100a; width:520px; text-align:left; border-radius:14px; overflow:hidden; box-shadow:0 24px 48px #17100a44;">
+            <div style="width:150px; flex:none; background:repeating-linear-gradient(135deg, #3b2414, #3b2414 12px, #241a10 12px, #241a10 24px);"></div>
+            <div style="padding:28px 30px; flex:1;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                <span style="width:22px; height:3px; border-radius:2px; background: {{ cardAccent }};"></span>
+                <span style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#5a4128; font-weight:600;">{{ featuredBadge }}</span>
+              </div>
+              <div style="font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin-bottom:10px;">{{ featuredName }}</div>
+              <div style="font-size:14px; line-height:1.7; color:#5a4128; font-weight:300; margin-bottom:18px;">{{ featuredDesc }}</div>
+              <div style="font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color: {{ cardAccent }};">{{ featuredPrice }}</div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div id="1b" style="display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="background:#17100a; color:#f0e5d1; font-size:13px; font-weight:600; letter-spacing:2px; padding:6px 12px;">1b</span>
+      <span style="font-size:15px; color:#3b2414; font-weight:500;">Typographic &mdash; no photo, oversized headline + info rail</span>
+    </div>
+    <div style="width:1200px; background:#f0e5d1; color:#17100a; padding:130px 72px 0;">
+      <div style="display:flex; align-items:center; gap:18px; margin-bottom:40px;">
+        <div style="width:80px; height:1px; background:#8a5527; transform-origin:left; animation:lineGrow 1.2s cubic-bezier(0.16,1,0.3,1) both;"></div>
+        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#7d8a4c; font-weight:500;">Coffee &amp; Bakery &middot; Portland, OR</div>
+      </div>
+      <h1 style="font-family:'Playfair Display',serif; font-size:118px; line-height:0.94; font-weight:900; margin:0 0 48px; letter-spacing:-3px; max-width:1000px;">Coffee that doesn't take itself <span style="font-style:italic; font-weight:500; color:#8a5527;">too seriously.</span></h1>
+      <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:56px; border-top:1px solid #3b241433; padding:44px 0 60px; align-items:start;">
+        <p style="font-size:17px; line-height:1.85; color:#5a4128; font-weight:300; margin:0;">Slow-roasted beans, bread out of the oven before sunrise, and a bar staff who will absolutely make fun of your oat-milk order. In a nice way.</p>
+        <div>
+          <div style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#7d8a4c; margin-bottom:12px;">Hours</div>
+          <div style="font-size:15px; line-height:1.9; color:#17100a; font-weight:300;">Mon&ndash;Fri 7&ndash;4<br/>Sat&ndash;Sun 8&ndash;3</div>
+        </div>
+        <div>
+          <div style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#7d8a4c; margin-bottom:12px;">Find Us</div>
+          <div style="font-size:15px; line-height:1.9; color:#17100a; font-weight:300;">412 Maple Street<br/>Portland, OR</div>
+        </div>
+      </div>
+      <sc-if value="{{ showFeaturedCard }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; align-items:stretch; background:#17100a; color:#f0e5d1; max-width:640px; border-radius:14px; overflow:hidden; margin-bottom:44px;">
+          <div style="width:170px; flex:none; background:repeating-linear-gradient(135deg, #3b2414, #3b2414 12px, #7d8a4c 12px, #7d8a4c 24px);"></div>
+          <div style="padding:30px 34px; flex:1;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <span style="width:22px; height:3px; border-radius:2px; background: {{ cardAccent }};"></span>
+              <span style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#f0e5d1aa; font-weight:600;">{{ featuredBadge }}</span>
+            </div>
+            <div style="font-family:'Playfair Display',serif; font-size:26px; font-weight:700; margin-bottom:10px;">{{ featuredName }}</div>
+            <div style="font-size:14px; line-height:1.7; color:#f0e5d1aa; font-weight:300; margin-bottom:16px;">{{ featuredDesc }}</div>
+            <div style="font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color: {{ cardAccent }};">{{ featuredPrice }}</div>
+          </div>
+        </div>
+      </sc-if>
+      <div style="display:flex; gap:20px; padding-bottom:110px;">
+        <a href="#" style="text-decoration:none; padding:22px 48px; background:#17100a; color:#f0e5d1; font-weight:600; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">Order Online</a>
+        <a href="#" style="text-decoration:none; padding:22px 48px; border:1px solid #17100a55; color:#17100a; font-weight:500; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">See the Menu</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div id="1c" style="display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="background:#17100a; color:#f0e5d1; font-size:13px; font-weight:600; letter-spacing:2px; padding:6px 12px;">1c</span>
+      <span style="font-size:15px; color:#3b2414; font-weight:500;">Asymmetric &mdash; wide image with overlapping copy card</span>
+    </div>
+    <div style="width:1200px; background:#e7dac2; padding:80px 0 220px; position:relative;">
+      <div style="width:820px; aspect-ratio:16/9; background:repeating-linear-gradient(135deg, #3b2414, #3b2414 18px, #7d8a4c 18px, #7d8a4c 36px); display:flex; align-items:flex-start; justify-content:flex-start; padding:24px; box-sizing:border-box;">
+        <span style="font-family:monospace; font-size:11px; color:#f0e5d1; background:#17100acc; padding:5px 10px;">wide counter shot</span>
+      </div>
+      <div style="position:absolute; right:64px; top:190px; width:520px; background:#17100a; color:#f0e5d1; padding:60px 56px; box-shadow:0 30px 60px #17100a2e;">
+        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:24px;">Est. 2019 &middot; Portland</div>
+        <h1 style="font-family:'Playfair Display',serif; font-size:56px; line-height:1.06; font-weight:900; margin:0 0 24px; letter-spacing:-1px;">Coffee that doesn't take itself <span style="font-style:italic; font-weight:500; color:#c99a54;">too seriously.</span></h1>
+        <p style="font-size:16px; line-height:1.8; color:#f0e5d1aa; margin:0 0 36px; font-weight:300;">Slow-roasted beans, bread before sunrise, and a bar staff who will make fun of your oat-milk order.</p>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <a href="#" style="text-decoration:none; padding:19px 38px; background:#c99a54; color:#17100a; font-weight:700; font-size:14px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">Order Online</a>
+          <a href="#" style="text-decoration:none; padding:19px 38px; border:1px solid #f0e5d155; color:#f0e5d1; font-weight:500; font-size:14px; letter-spacing:1.5px; text-transform:uppercase; display:inline-flex; align-items:center;">Find Us</a>
+        </div>
+      </div>
+      <div style="margin-top:18px; padding-left:24px; font-family:'Playfair Display',serif; font-style:italic; font-size:13px; color:#5a412899;">Morning service, six a.m.</div>
+      <sc-if value="{{ showFeaturedCard }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:40px; margin-left:24px; display:flex; align-items:stretch; background:#f0e5d1; color:#17100a; width:480px; border-radius:14px; overflow:hidden; box-shadow:0 12px 32px #17100a1a;">
+          <div style="width:140px; flex:none; background:repeating-linear-gradient(135deg, #9c4a2e, #9c4a2e 12px, #e7dac2 12px, #e7dac2 24px);"></div>
+          <div style="padding:26px 28px; flex:1;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+              <span style="width:22px; height:3px; border-radius:2px; background: {{ cardAccent }};"></span>
+              <span style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#5a4128; font-weight:600;">{{ featuredBadge }}</span>
+            </div>
+            <div style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; margin-bottom:8px;">{{ featuredName }}</div>
+            <div style="font-size:13.5px; line-height:1.65; color:#5a4128; font-weight:300; margin-bottom:14px;">{{ featuredDesc }}</div>
+            <div style="font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color: {{ cardAccent }};">{{ featuredPrice }}</div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;showFeaturedCard&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Featured card&quot; },
+  &quot;featuredBadge&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Brew of the week&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Featured card&quot; },
+  &quot;featuredName&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Overnight Cold Brew&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Featured card&quot; },
+  &quot;featuredDesc&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Eighteen hours of patience. Round, low-acid, smooth enough to drink black.&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Featured card&quot; },
+  &quot;featuredPrice&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;$4.75&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Featured card&quot; },
+  &quot;cardAccent&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#c99a54&quot;, &quot;options&quot;: [&quot;#c99a54&quot;, &quot;#7d8a4c&quot;, &quot;#9c4a2e&quot;, &quot;#f0e5d1&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Featured card&quot; }
+}">class Component extends DCLogic {
+  renderVals() {
+    const p = this.props || {};
+    return {
+      showFeaturedCard: p.showFeaturedCard ?? true,
+      featuredBadge: p.featuredBadge ?? 'Brew of the week',
+      featuredName: p.featuredName ?? 'Overnight Cold Brew',
+      featuredDesc: p.featuredDesc ?? 'Eighteen hours of patience. Round, low-acid, smooth enough to drink black.',
+      featuredPrice: p.featuredPrice ?? '$4.75',
+      cardAccent: p.cardAccent ?? '#c99a54',
+    };
+  }
+}</script>
+</body>
+</html>

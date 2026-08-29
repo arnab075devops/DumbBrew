@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+rzp-key.csv
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+*.pem
+*.key

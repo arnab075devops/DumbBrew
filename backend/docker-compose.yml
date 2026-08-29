@@ -1,0 +1,185 @@
+name: dumbbrew
+
+x-service-common: &service-common
+  restart: unless-stopped
+  environment:
+    - DATABASE_URL=${DATABASE_URL}
+    - JWT_SECRET=${JWT_SECRET}
+    - JWT_ISSUER=${JWT_ISSUER:-dumbbrew-auth}
+    - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    - NODE_ENV=${NODE_ENV:-production}
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks:
+    - dumbbrew-net
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-dumbbrew}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=${POSTGRES_DB:-dumbbrew}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dumbbrew}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dumbbrew-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    <<: *service-common
+    build: ./services/auth-service
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER:-dumbbrew-auth}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=4001
+      - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL:-15m}
+      - REFRESH_TOKEN_TTL_DAYS=${REFRESH_TOKEN_TTL_DAYS:-7}
+    expose:
+      - "4001"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  content-service:
+    <<: *service-common
+    build: ./services/content-service
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER:-dumbbrew-auth}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=4002
+    expose:
+      - "4002"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  gateway:
+    restart: unless-stopped
+    build: ./gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - content-service
+    networks:
+      - dumbbrew-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    networks:
+      - dumbbrew-net
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - dumbbrew-net
+
+  loki:
+    image: grafana/loki:3.1.1
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - dumbbrew-net
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/loki/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - dumbbrew-net
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - dumbbrew-net
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - dumbbrew-net
+
+networks:
+  dumbbrew-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:

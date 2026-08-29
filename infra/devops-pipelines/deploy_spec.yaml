@@ -1,0 +1,27 @@
+version: 0.1
+
+# Used by an OCI DevOps "Compute Instance Group — Rolling Deployment" stage.
+# The DevOps deploy agent (installed via cloud-init, see
+# infra/terraform/cloud-init.yaml.tpl) runs these hooks directly on the VM.
+
+files:
+  - source: infra/devops-pipelines/scripts/
+    destination: /opt/dumbbrew-deploy/
+
+hooks:
+  BEFORE_INSTALL:
+    - script: before_install.sh
+      timeoutInSeconds: 120
+      runAs: root
+  AFTER_INSTALL:
+    - script: after_install.sh
+      timeoutInSeconds: 300
+      runAs: root
+  START_APPLICATION:
+    - script: start_application.sh
+      timeoutInSeconds: 300
+      runAs: root
+  VALIDATE_SERVICE:
+    - script: validate_service.sh
+      timeoutInSeconds: 60
+      runAs: root

@@ -1,0 +1,22 @@
+# Overrides the `build:` directives in docker-compose.yml with prebuilt OCIR
+# images for production deploys driven by the OCI DevOps pipeline. Local dev
+# still uses plain `docker compose up --build` against docker-compose.yml
+# alone, which builds from source.
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+name: dumbbrew
+
+# Note: base docker-compose.yml keeps `build:` on these services for local
+# dev convenience. `docker compose up -d` (no --build flag) never rebuilds
+# an image that already exists locally, so in production the deploy script
+# always runs `docker compose ... pull` first to fetch the OCIR-tagged image
+# named here, then `up -d` just starts it — the build context is never used.
+services:
+  auth-service:
+    image: ${AUTH_IMAGE}
+
+  content-service:
+    image: ${CONTENT_IMAGE}
+
+  gateway:
+    image: ${GATEWAY_IMAGE}

@@ -1,0 +1,70 @@
+version: 0.1
+component: build
+timeoutInSeconds: 1200
+shell: bash
+
+env:
+  variables:
+    OCIR_REGION: "iad.ocir.io"
+  exportedVariables:
+    - AUTH_IMAGE
+    - CONTENT_IMAGE
+    - GATEWAY_IMAGE
+
+steps:
+  - type: Command
+    name: "Compute image tags"
+    command: |
+      export SHORT_SHA=$(echo $OCI_TRIGGER_COMMIT_HASH | cut -c1-8)
+      echo "SHORT_SHA=$SHORT_SHA" >> $OCI_WORKSPACE_DIR/build.env
+      echo "AUTH_IMAGE=${OCIR_REGION}/${OCIR_NAMESPACE}/dumbbrew/auth-service:${SHORT_SHA}" >> $OCI_WORKSPACE_DIR/build.env
+      echo "CONTENT_IMAGE=${OCIR_REGION}/${OCIR_NAMESPACE}/dumbbrew/content-service:${SHORT_SHA}" >> $OCI_WORKSPACE_DIR/build.env
+      echo "GATEWAY_IMAGE=${OCIR_REGION}/${OCIR_NAMESPACE}/dumbbrew/gateway:${SHORT_SHA}" >> $OCI_WORKSPACE_DIR/build.env
+
+  - type: Command
+    name: "Load computed vars"
+    command: |
+      source $OCI_WORKSPACE_DIR/build.env
+      echo "AUTH_IMAGE=$AUTH_IMAGE"
+
+  - type: Command
+    name: "Docker login to OCIR"
+    command: |
+      echo "${OCIR_AUTH_TOKEN}" | docker login ${OCIR_REGION} -u "${OCIR_NAMESPACE}/${OCIR_USERNAME}" --password-stdin
+
+  - type: Command
+    name: "Build auth-service image"
+    command: |
+      source $OCI_WORKSPACE_DIR/build.env
+      docker build -t "$AUTH_IMAGE" ./backend/services/auth-service
+
+  - type: Command
+    name: "Build content-service image"
+    command: |
+      source $OCI_WORKSPACE_DIR/build.env
+      docker build -t "$CONTENT_IMAGE" ./backend/services/content-service
+
+  - type: Command
+    name: "Build gateway image"
+    command: |
+      source $OCI_WORKSPACE_DIR/build.env
+      docker build -t "$GATEWAY_IMAGE" ./backend/gateway
+
+  - type: Command
+    name: "Run unit/type checks"
+    command: |
+      docker run --rm -v "$PWD/backend/services/auth-service:/app" -w /app node:20-alpine sh -c "npm ci && npm run lint"
+      docker run --rm -v "$PWD/backend/services/content-service:/app" -w /app node:20-alpine sh -c "npm ci && npm run lint"
+
+  - type: Command
+    name: "Push images to OCIR"
+    command: |
+      source $OCI_WORKSPACE_DIR/build.env
+      docker push "$AUTH_IMAGE"
+      docker push "$CONTENT_IMAGE"
+      docker push "$GATEWAY_IMAGE"
+
+outputArtifacts:
+  - name: deploy_manifest
+    type: BINARY
+    location: ${OCI_WORKSPACE_DIR}/infra/devops-pipelines/deploy_spec.yaml
