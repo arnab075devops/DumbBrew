@@ -6,12 +6,19 @@ designed to run together on a single OCI Always Free VM. See
 `../docs/ARCHITECTURE.md` for the why behind these choices and
 `../infra/terraform/README.md` for how it gets to OCI.
 
+**`gateway` also serves the public site** (`gateway/public/`), but that
+site's content and images now come from Supabase and Cloudflare R2 directly
+from the browser — see the root `../README.md`. `auth-service` and
+`content-service` are no longer in that request path; they're kept as an
+admin backend (JWT-protected CRUD, useful for future admin tooling) and are
+optional for the site to function.
+
 | Service | Port (internal) | Responsibility |
 |---|---|---|
-| `gateway` | 80 (public) | nginx reverse proxy, rate limiting, security headers |
-| `auth-service` | 4001 | Admin login/refresh/logout, issues JWTs |
-| `content-service` | 4002 | Events CRUD, newsletter subscribe/list — admin routes verify the JWT locally using a shared secret |
-| `postgres` | 5432 | Single DB, two schemas: `auth`, `content` |
+| `gateway` | 80 (public) | nginx reverse proxy + serves the static site, rate limiting, security headers |
+| `auth-service` | 4001 | Admin login/refresh/logout, issues JWTs — optional, not used by the public site |
+| `content-service` | 4002 | Events CRUD, newsletter subscribe/list — admin routes verify the JWT locally using a shared secret; optional, not used by the public site (see Supabase setup in the root README) |
+| `postgres` | 5432 | Single DB, two schemas: `auth`, `content` — separate from Supabase's own Postgres |
 | `prometheus` / `grafana` / `loki` / `promtail` / `node-exporter` / `cadvisor` | — | Monitoring stack |
 
 ## Run it locally
