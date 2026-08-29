@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing In – DumbBrew</title>
+<script src="./config.js"></script>
+<style>
+body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.msg { text-align:center; max-width:420px; padding:0 24px; }
+.err { color:#a13a2e; font-size:14px; margin-top:16px; }
+a { color:#8a5527; }
+</style>
+</head>
+<body>
+<div class="msg">
+  <div id="status">Signing you in&hellip;</div>
+</div>
+<script>
+// PKCE code exchange (RFC 7636) — plain fetch, no library needed. This page
+// has no chrome/nav on purpose: it's a transient redirect target, never
+// meant to be seen for more than a moment.
+(async function () {
+  const statusEl = document.getElementById('status');
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+  const oauthError = params.get('error');
+
+  function fail(message) {
+    statusEl.innerHTML = 'Sign-in failed.<div class="err">' + message + '</div><div style="margin-top:20px;"><a href="./login.html">Try again</a></div>';
+  }
+
+  if (oauthError) return fail(params.get('error_description') || oauthError);
+  if (!code) return fail('No authorization code was returned.');
+
+  const expectedState = sessionStorage.getItem('dumbbrew_oauth_state');
+  const verifier = sessionStorage.getItem('dumbbrew_pkce_verifier');
+  sessionStorage.removeItem('dumbbrew_oauth_state');
+  sessionStorage.removeItem('dumbbrew_pkce_verifier');
+  if (!verifier || !state || state !== expectedState) return fail('Sign-in session expired or was tampered with. Please try again.');
+
+  const { AUTHENTIK_URL, AUTHENTIK_CLIENT_ID, AUTHENTIK_REDIRECT_URI } = window.APP_CONFIG;
+  try {
+    const res = await fetch(AUTHENTIK_URL.replace(/\/$/, '') + '/application/o/token/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: AUTHENTIK_CLIENT_ID,
+        code,
+        redirect_uri: AUTHENTIK_REDIRECT_URI,
+        code_verifier: verifier
+      })
+    });
+    if (!res.ok) return fail('Could not complete sign-in with the identity provider.');
+    const tokens = await res.json();
+    if (!tokens.id_token) return fail('Identity provider did not return an id token.');
+
+    // Session-only on purpose: Authentik's id_token is short-lived and this
+    // build doesn't implement refresh — logging back in via login.html is
+    // the "session expired" recovery path for now.
+    sessionStorage.setItem('dumbbrew_id_token', tokens.id_token);
+    window.location.href = './account.html';
+  } catch (err) {
+    fail('Network error while completing sign-in.');
+  }
+})();
+</script>
+</body>
+</html>

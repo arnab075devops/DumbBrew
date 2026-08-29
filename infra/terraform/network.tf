@@ -63,6 +63,19 @@ resource "oci_core_security_list" "main" {
     }
   }
 
+  # Authentik (customer SSO) — exposed directly, not proxied through the
+  # gateway, since there's no domain/TLS yet for Authentik to sit behind a
+  # sub-path or subdomain of. Revisit once DNS/TLS exist (see
+  # docs/AUTHENTIK_SETUP.md).
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 9000
+      max = 9000
+    }
+  }
+
   # ICMP for path MTU discovery
   ingress_security_rules {
     protocol = "1"

@@ -14,5 +14,13 @@ export const config = {
   accessTokenTtl: process.env.ACCESS_TOKEN_TTL ?? "15m",
   refreshTokenTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 7),
   corsOrigin: process.env.CORS_ORIGIN ?? "*",
-  nodeEnv: process.env.NODE_ENV ?? "development"
+  nodeEnv: process.env.NODE_ENV ?? "development",
+
+  // Customer registration (Authentik + Supabase) — required only for the
+  // /api/customers/register route, not the admin login routes above.
+  authentikUrl: process.env.AUTHENTIK_URL ?? "http://authentik-server:9000",
+  authentikApiToken: process.env.AUTHENTIK_API_TOKEN ?? "",
+  supabaseUrl: process.env.SUPABASE_URL ?? "",
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  termsVersion: process.env.TERMS_VERSION ?? "2026-08-30"
 };

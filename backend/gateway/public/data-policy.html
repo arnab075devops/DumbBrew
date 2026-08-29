@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Storage Policy – DumbBrew</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="./config.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body { margin: 0; background: #f0e5d1; overflow-x: hidden; }
+a { color: #8a5527; }
+a:hover { color: #7d8a4c; }
+.legal h2 { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:#17100a; margin:48px 0 14px; }
+.legal h2:first-child { margin-top:0; }
+.legal p, .legal li { font-size:15px; line-height:1.85; color:#5a4128; font-weight:300; margin:0 0 14px; }
+.legal ul { padding-left:22px; margin:0 0 14px; }
+.legal table { width:100%; border-collapse:collapse; margin:0 0 24px; font-size:14px; }
+.legal th { text-align:left; color:#5a4128; text-transform:uppercase; letter-spacing:1px; font-size:11px; font-weight:600; padding:10px 12px 10px 0; border-bottom:2px solid #c99a54; }
+.legal td { padding:12px 12px 12px 0; border-bottom:1px solid #3b241422; color:#5a4128; font-weight:300; vertical-align:top; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<div ref="{{ rootRef }}" style="font-family:'Poppins',sans-serif; background:#f0e5d1; color:#241a10; width:100%;">
+
+  <!-- NAV -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 72px; position:sticky; top:0; background:#f0e5d1f0; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid #3b241414; z-index:20; color:#241a10;">
+    <a href="./index.html" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+      <img src="{{ logoUrl }}" alt="DumbBrew logo" style="width:44px; height:44px; object-fit:contain; display:block;"/>
+      <div style="font-family:'Playfair Display',serif; font-weight:700; font-size:22px; letter-spacing:1px; color:#17100a;">DumbBrew</div>
+    </a>
+    <a href="./register.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#8a5527;">&larr; Back to Sign Up</a>
+  </div>
+
+  <!-- CONTENT -->
+  <div style="padding:80px 72px 160px;">
+    <div style="max-width:720px; margin:0 auto;">
+      <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:16px;">Legal</div>
+      <h1 style="font-family:'Playfair Display',serif; font-size:clamp(32px,5vw,44px); font-weight:900; margin:0 0 8px; color:#17100a; letter-spacing:-1px;">Data Storage Policy</h1>
+      <p style="font-size:14px; color:#5a412899; margin:0 0 56px;">Version {{ termsVersion }} &middot; Written to align with India's Digital Personal Data Protection Act, 2023 (DPDP Act)</p>
+
+      <div class="legal">
+        <h2>1. What we collect and why</h2>
+        <p>When you create a DumbBrew account, we collect the following personal data ("Personal Data" as defined under the DPDP Act) directly from you, for the stated purpose only:</p>
+        <table>
+          <tr><th>Data</th><th>Purpose</th><th>Where it's stored</th></tr>
+          <tr><td>Email address</td><td>Account identification, communication</td><td>Authentik (identity provider) and our database (Supabase)</td></tr>
+          <tr><td>Username</td><td>Account identification, display name</td><td>Authentik and our database</td></tr>
+          <tr><td>Phone number</td><td>Account identification, order/delivery contact</td><td>Authentik (as an attribute) and our database</td></tr>
+          <tr><td>Password</td><td>Account security</td><td>Authentik only, stored as a salted hash — never seen or stored by our own database</td></tr>
+          <tr><td>Consent record (timestamp + policy version)</td><td>Proof of consent to these terms, as required under the DPDP Act</td><td>Our database (Supabase)</td></tr>
+        </table>
+        <p>We do not collect Personal Data from you for any purpose beyond operating your account and the service, and we do not sell your Personal Data.</p>
+
+        <h2>2. Legal basis for processing</h2>
+        <p>We process your Personal Data on the basis of your explicit, informed consent, given by checking the consent box on the registration page and accepting this policy. You may withdraw consent at any time by requesting account deletion (Section 6), though this will mean you can no longer use features that require an account.</p>
+
+        <h2>3. Where your data lives</h2>
+        <p>Your account credentials (password) are held only by our self-hosted identity provider, Authentik. Your profile data (email, username, phone number, consent record) is held in our database, Supabase. Product/menu images are served from Cloudflare R2 and contain no personal data. Each of these is a data processor acting on our instructions; none of them independently uses your data for their own purposes.</p>
+
+        <h2>4. Cross-border data transfer</h2>
+        <p>The DPDP Act permits transfer of personal data outside India except to countries specifically restricted by the Central Government — it does not, on its own, require your data to be stored only within India. Depending on the hosting region chosen for our database provider, your data may be processed outside India; we do not transfer data to any country restricted under the DPDP Act. The specific hosting region in use will be named here once finalised.</p>
+
+        <h2>5. How we protect your data</h2>
+        <ul>
+          <li>Every customer's data is isolated at the database level: row-level security policies ensure a signed-in customer can only read or modify their own account row, never another customer's.</li>
+          <li>Passwords are never stored by DumbBrew's own systems — only by Authentik, hashed.</li>
+          <li>All data in transit is sent over HTTPS.</li>
+          <li>Access to raw production data is limited to what is operationally necessary.</li>
+        </ul>
+
+        <h2>6. Your rights as a Data Principal</h2>
+        <p>Under the DPDP Act, you have the right to:</p>
+        <ul>
+          <li><strong>Access</strong> a summary of the personal data we hold about you and the processing activities carried out.</li>
+          <li><strong>Correct</strong> inaccurate or outdated personal data.</li>
+          <li><strong>Erase</strong> your personal data once it is no longer needed for the purpose it was collected, or to withdraw consent entirely (this closes your account).</li>
+          <li><strong>Grievance redressal</strong> — raise a complaint about how your data is handled, and have it addressed in a reasonable timeframe.</li>
+          <li><strong>Nominate</strong> another individual to exercise these rights on your behalf in the event of death or incapacity.</li>
+        </ul>
+        <p>To exercise any of these rights, contact our Grievance Officer below. We will respond within a reasonable timeframe as required under the Act.</p>
+
+        <h2>7. Data retention</h2>
+        <p>We retain your account data for as long as your account is active. If you request account deletion, we will delete your profile data and consent record, and request deletion of your Authentik identity, within a reasonable timeframe, except where retention is required to comply with a legal obligation.</p>
+
+        <h2>8. Children's data</h2>
+        <p>DumbBrew's account features are not directed at, and are not knowingly offered to, individuals below the age required for consent under the DPDP Act. If we learn that we have inadvertently collected data from a child without verifiable parental consent, we will delete it.</p>
+
+        <h2>9. Grievance Officer</h2>
+        <p>In accordance with the DPDP Act and the Information Technology Act, 2000, you may contact our Grievance Officer with any question, complaint, or rights request relating to your personal data:</p>
+        <p><strong>Grievance Officer</strong><br/>[Name to be filled in]<br/>Email: grievance@dumbbrew.example<br/>DumbBrew Coffee &amp; Bakery, 412 Maple Street, [City, State, PIN]</p>
+
+        <h2>10. Changes to this policy</h2>
+        <p>We may update this policy as our practices or the law change. Material changes will be reflected in the version number above; if you registered under an earlier version, continuing to use the account may require accepting the updated policy.</p>
+
+        <p style="margin-top:56px; padding-top:24px; border-top:1px solid #3b241422; font-size:13px; color:#5a412899;">This document is a drafted template written to align with the general principles of India's DPDP Act, 2023, and has not been reviewed by a lawyer. Have it reviewed — especially the hosting-region and Grievance Officer details — before relying on it for a live business handling real customer data.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#17100a; color:#f0e5d1; padding:64px 72px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px;">
+    <a href="./index.html" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
+      <img src="{{ logoUrl }}" alt="DumbBrew logo" style="width:32px; height:32px; object-fit:contain; display:block;"/>
+      <span style="font-family:'Playfair Display',serif; font-weight:700; font-size:17px; letter-spacing:1px;">DumbBrew</span>
+    </a>
+    <div style="font-size:12px; color:#f0e5d166; letter-spacing:0.5px;">&copy; 2026 DumbBrew Coffee &amp; Bakery. Made with love and too much caffeine.</div>
+    <div style="display:flex; gap:28px;">
+      <a href="./terms.html" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Terms</a>
+      <a href="./data-policy.html" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Data Policy</a>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      rootRef: (el) => { this.rootNode = el; },
+      logoUrl: window.assetUrl('db-logo.png'),
+      termsVersion: window.APP_CONFIG.TERMS_VERSION,
+    };
+  }
+}
+</script>
+</body>
+</html>

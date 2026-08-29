@@ -5,6 +5,7 @@ import client from "prom-client";
 import { config } from "./config.js";
 import { pool } from "./db.js";
 import { authRoutes } from "./routes/auth.routes.js";
+import { customersRoutes } from "./routes/customers.routes.js";
 
 const app = Fastify({
   logger: {
@@ -54,6 +55,7 @@ app.get("/metrics", async (_req, reply) => {
 });
 
 await app.register(authRoutes, { prefix: "/api/auth" });
+await app.register(customersRoutes, { prefix: "/api/customers" });
 
 app.setErrorHandler((err, req, reply) => {
   req.log.error(err);

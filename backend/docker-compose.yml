@@ -55,6 +55,12 @@ services:
       - PORT=4001
       - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL:-15m}
       - REFRESH_TOKEN_TTL_DAYS=${REFRESH_TOKEN_TTL_DAYS:-7}
+      # Customer registration (Authentik + Supabase) — see docs/AUTHENTIK_SETUP.md
+      - AUTHENTIK_URL=http://authentik-server:9000
+      - AUTHENTIK_API_TOKEN=${AUTHENTIK_API_TOKEN:-}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - TERMS_VERSION=${TERMS_VERSION:-2026-08-30}
     expose:
       - "4001"
     deploy:
@@ -174,6 +180,91 @@ services:
     networks:
       - dumbbrew-net
 
+  # --- Authentik (customer SSO/identity) ---
+  # Deliberately given its own Postgres + Redis instead of a schema in the
+  # shared `postgres` container: Authentik runs its own first-party
+  # migrations against its DB and expects to own it outright, unlike
+  # auth-service/content-service which are our own code following the
+  # schema-per-service convention.
+  authentik-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=authentik
+      - POSTGRES_PASSWORD=${AUTHENTIK_POSTGRES_PASSWORD:?AUTHENTIK_POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=authentik
+    volumes:
+      - authentik-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentik"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dumbbrew-net
+
+  authentik-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dumbbrew-net
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2024.10.4
+    restart: unless-stopped
+    command: server
+    environment: &authentik-env
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY is required}
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgres
+      - AUTHENTIK_POSTGRESQL__USER=authentik
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_POSTGRES_PASSWORD:?AUTHENTIK_POSTGRES_PASSWORD is required}
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_REDIS__HOST=authentik-redis
+      - AUTHENTIK_BOOTSTRAP_EMAIL=${AUTHENTIK_BOOTSTRAP_EMAIL}
+      - AUTHENTIK_BOOTSTRAP_PASSWORD=${AUTHENTIK_BOOTSTRAP_PASSWORD}
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+    # No domain/TLS exists yet (see infra/terraform/network.tf) so this is
+    # exposed directly on its own host port rather than proxied through the
+    # gateway — Authentik expects to own its origin, not live under an
+    # nginx sub-path. Move behind a subdomain once DNS/TLS exist.
+    ports:
+      - "9000:9000"
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    networks:
+      - dumbbrew-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2024.10.4
+    restart: unless-stopped
+    command: worker
+    environment: *authentik-env
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    networks:
+      - dumbbrew-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   dumbbrew-net:
     driver: bridge
@@ -183,3 +274,4 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+  authentik-postgres-data:

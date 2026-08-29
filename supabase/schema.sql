@@ -198,3 +198,34 @@ on conflict do nothing;
 insert into visit_info (address, address_note, hours_weekday, hours_weekend, phone, email)
 select '412 Maple Street, Portland, OR', 'Just past the hardware store, look for the crooked awning', '7:00am – 4:00pm', '8:00am – 3:00pm', '(503) 555-0142', 'hello@dumbbrew.example'
 where not exists (select 1 from visit_info);
+
+-- --- Customer accounts (Authentik SSO, see docs/AUTHENTIK_SETUP.md) ---
+-- Identity/passwords live in Authentik, not here. This table only mirrors
+-- the profile fields the app needs and is what RLS scopes customer data to.
+-- `id` is the Authentik user's UUID — Supabase Third-Party Auth extracts
+-- that same value as `auth.uid()` from the OIDC id_token, so `auth.uid() =
+-- id` is what makes a row "belong" to the logged-in customer.
+--
+-- Isolation pattern for any FUTURE per-customer table (orders, favorites,
+-- etc.): add a `customer_id uuid references customers(id)` column and a
+-- `using (auth.uid() = customer_id)` policy, same as below. That FK+policy
+-- pair is the whole mechanism — no such tables exist yet, so none are added
+-- speculatively here.
+create table if not exists customers (
+  id uuid primary key,
+  email text unique not null,
+  username text unique not null,
+  phone_number text unique not null,
+  terms_accepted_at timestamptz not null,
+  terms_version text not null,
+  created_at timestamptz not null default now()
+);
+alter table customers enable row level security;
+
+drop policy if exists "customers read own" on customers;
+create policy "customers read own" on customers for select using (auth.uid() = id);
+drop policy if exists "customers update own" on customers;
+create policy "customers update own" on customers for update using (auth.uid() = id);
+-- No insert/delete policy for anon/authenticated: only auth-service (using
+-- the service-role key, which bypasses RLS) creates rows, during
+-- registration — see backend/services/auth-service/src/routes/customers.routes.ts.

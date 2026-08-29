@@ -12,10 +12,27 @@ window.APP_CONFIG = {
   // fall back to the images already checked into ./assets/.
   R2_BASE: 'https://pub-acdd02b3e347450b80d14a3676db872e.r2.dev',
 
-  // Legacy Node admin backend (auth-service/content-service, see
-  // backend/README.md). Not required for the public site — kept only if you
-  // still run it for admin tooling. Leave as-is if you're not using it.
+  // The gateway (nginx + auth-service/content-service, see
+  // backend/README.md). Only customer registration (register.html, via
+  // /api/customers/register) depends on this now — everything else the
+  // legacy backend does (admin login, events/newsletter) is optional, see
+  // backend/README.md.
   API_BASE: 'http://localhost',
+
+  // Customer SSO (Authentik) — see docs/AUTHENTIK_SETUP.md. Registration
+  // (register.html) doesn't need these, it just posts to API_BASE +
+  // '/api/customers/register'. Login/callback (login.html,
+  // auth-callback.html) need all three filled in once Authentik is deployed
+  // and its OIDC application is created.
+  AUTHENTIK_URL: 'http://YOUR-VM-IP:9000',
+  AUTHENTIK_CLIENT_ID: 'YOUR-AUTHENTIK-OIDC-CLIENT-ID',
+  AUTHENTIK_REDIRECT_URI: window.location.origin + '/auth-callback.html',
+
+  // Terms & Data Storage Policy version the customer is agreeing to on
+  // register.html — must match TERMS_VERSION on auth-service exactly, or
+  // registration is rejected (stale-consent guard). Bump both together
+  // whenever terms.html/data-policy.html materially change.
+  TERMS_VERSION: '2026-08-30',
 };
 
 // R2_BASE + '/name.jpg' when set, else the checked-in local copy.
@@ -30,6 +47,19 @@ window.supabaseSelect = function supabaseSelect(table, query) {
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
   return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || 'select=*'), {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY }
+  }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('supabase ' + table + ' http ' + r.status))));
+};
+
+// Signed-in reads/writes (customer data). Supabase's Third-Party Auth
+// verifies Authentik's own id_token directly against the configured
+// issuer — there's no separate "Supabase session" to exchange for, the
+// id_token itself is the bearer token, and auth.uid() in RLS resolves from
+// it. apikey still has to be the anon key (Supabase requires it on every
+// REST call); Authorization is what actually identifies the customer.
+window.supabaseSelectAs = function supabaseSelectAs(table, query, idToken) {
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || 'select=*'), {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + idToken }
   }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('supabase ' + table + ' http ' + r.status))));
 };
 

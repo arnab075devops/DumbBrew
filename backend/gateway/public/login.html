@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Visit – DumbBrew</title>
+<title>Log In – DumbBrew</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -42,59 +42,24 @@ a:hover { color: #7d8a4c; }
       <a href="./menu.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Menu</a>
       <a href="./story.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Story</a>
       <a href="./gallery.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Gallery</a>
-      <a href="./visit.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#8a5527;">Visit</a>
-      <a href="./login.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Log In</a>
+      <a href="./visit.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Visit</a>
+      <a href="./login.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#8a5527;">Log In</a>
       <a href="./index.html#order" style="text-decoration:none; padding:12px 26px; background:#c99a54; color:#17100a; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1px; text-transform:uppercase; transition:background 0.35s ease, transform 0.35s ease;" style-hover="background:#b3854a; transform:translateY(-1px);">Order</a>
     </div>
   </div>
 
-  <!-- PAGE HERO / VISIT -->
-  <div style="background:#17100a; color:#f0e5d1; padding:140px 72px 100px;">
-    <div style="max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:96px; align-items:center;">
+  <!-- LOGIN -->
+  <div style="padding:140px 72px 180px;">
+    <div style="max-width:480px; margin:0 auto; text-align:center;">
       <div data-reveal="true">
-        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:20px;">Visit</div>
-        <h1 style="font-family:'Playfair Display',serif; font-size:clamp(38px,5vw,58px); font-weight:900; margin:0 0 40px; letter-spacing:-1px;">Come say hi</h1>
-        <div style="font-size:18px; line-height:1.9; margin-bottom:40px; font-weight:300;">
-          <div>{{ visit.address }}</div>
-          <sc-if value="{{ visit.addressNote }}">
-            <div style="color:#f0e5d188; font-size:15px;">{{ visit.addressNote }}</div>
-          </sc-if>
-        </div>
-        <div style="display:grid; grid-template-columns:auto 1fr; gap:14px 40px; font-size:15px; font-weight:300; border-top:1px solid #f0e5d122; padding-top:28px;">
-          <div style="color:#c99a54; letter-spacing:2px; text-transform:uppercase; font-size:12px;">Mon&ndash;Fri</div><div>{{ visit.hoursWeekday }}</div>
-          <div style="color:#c99a54; letter-spacing:2px; text-transform:uppercase; font-size:12px;">Sat&ndash;Sun</div><div>{{ visit.hoursWeekend }}</div>
-          <sc-if value="{{ visit.phone }}">
-            <div style="color:#c99a54; letter-spacing:2px; text-transform:uppercase; font-size:12px;">Phone</div><div>{{ visit.phone }}</div>
-          </sc-if>
-          <sc-if value="{{ visit.email }}">
-            <div style="color:#c99a54; letter-spacing:2px; text-transform:uppercase; font-size:12px;">Email</div><div>{{ visit.email }}</div>
-          </sc-if>
-        </div>
-      </div>
-      <div data-reveal="true" style="aspect-ratio:1; background:repeating-linear-gradient(0deg, #3b2414, #3b2414 12px, #241a10 12px, #241a10 24px); display:flex; align-items:center; justify-content:center;">
-        <span style="font-family:monospace; font-size:13px; color:#f0e5d1; background:#17100acc; padding:8px 14px;">map embed</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- GOOD TO KNOW -->
-  <div style="padding:150px 72px;">
-    <div data-reveal="true" style="text-align:center; margin-bottom:80px;">
-      <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#7d8a4c; font-weight:500; margin-bottom:18px;">Good To Know</div>
-      <h2 style="font-family:'Playfair Display',serif; font-size:50px; font-weight:700; margin:0; color:#17100a; letter-spacing:-0.5px;">Before you come by</h2>
-    </div>
-    <div data-reveal="true" style="max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr 1fr; gap:56px;">
-      <div style="border-top:2px solid #c99a54; padding-top:32px;">
-        <div style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#17100a; margin-bottom:12px;">Parking</div>
-        <p style="font-size:15px; line-height:1.8; color:#5a4128; font-weight:300; margin:0;">Free street parking after 6pm. A small lot behind the hardware store is open to customers during the day.</p>
-      </div>
-      <div style="border-top:2px solid #c99a54; padding-top:32px;">
-        <div style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#17100a; margin-bottom:12px;">Wifi</div>
-        <p style="font-size:15px; line-height:1.8; color:#5a4128; font-weight:300; margin:0;">Free, fast, and the password is on the chalkboard. No purchase required, but buy something, you cheapskate.</p>
-      </div>
-      <div style="border-top:2px solid #c99a54; padding-top:32px;">
-        <div style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#17100a; margin-bottom:12px;">Large groups</div>
-        <p style="font-size:15px; line-height:1.8; color:#5a4128; font-weight:300; margin:0;">Six or more, give us a heads up so we can actually keep up. The back table seats ten.</p>
+        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:20px;">Welcome Back</div>
+        <h1 style="font-family:'Playfair Display',serif; font-size:clamp(34px,5vw,46px); font-weight:900; margin:0 0 24px; color:#17100a; letter-spacing:-1px;">Log in</h1>
+        <p style="font-size:16px; line-height:1.8; color:#5a4128; font-weight:300; margin:0 0 44px;">You'll be taken to our identity provider to sign in securely.</p>
+        <sc-if value="{{ errorMessage }}">
+          <div style="color:#a13a2e; font-size:14px; font-weight:500; padding:12px 16px; background:#a13a2e11; border-radius:2px; margin-bottom:24px; text-align:left;">{{ errorMessage }}</div>
+        </sc-if>
+        <button onClick="{{ handleLogin }}" style="padding:17px 48px; background:#c99a54; color:#17100a; border:none; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:background 0.3s ease;" style-hover="background:#b3854a;">Log In</button>
+        <p style="margin-top:32px; font-size:13px; color:#5a412899; font-weight:300;">No account yet? <a href="./register.html" style="color:#8a5527; font-weight:500;">Create one</a></p>
       </div>
     </div>
   </div>
@@ -107,8 +72,8 @@ a:hover { color: #7d8a4c; }
     </a>
     <div style="font-size:12px; color:#f0e5d166; letter-spacing:0.5px;">&copy; 2026 DumbBrew Coffee &amp; Bakery. Made with love and too much caffeine.</div>
     <div style="display:flex; gap:28px;">
-      <a href="#" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Instagram</a>
-      <a href="#" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Facebook</a>
+      <a href="./terms.html" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Terms</a>
+      <a href="./data-policy.html" style="text-decoration:none; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa;">Data Policy</a>
     </div>
   </div>
 
@@ -116,19 +81,24 @@ a:hover { color: #7d8a4c; }
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
-const DEFAULT_VISIT = {
-  address: '412 Maple Street, Portland, OR',
-  addressNote: 'Just past the hardware store, look for the crooked awning',
-  hoursWeekday: '7:00am – 4:00pm',
-  hoursWeekend: '8:00am – 3:00pm',
-  phone: '(503) 555-0142',
-  email: 'hello@dumbbrew.example',
-};
+// PKCE (RFC 7636) helpers — Web Crypto only, no library needed.
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function randomVerifier() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return b64url(bytes.buffer);
+}
+async function challengeFor(verifier) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return b64url(digest);
+}
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { visit: DEFAULT_VISIT };
+    this.state = { errorMessage: '' };
   }
   componentDidMount() {
     this.reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -136,19 +106,8 @@ class Component extends DCLogic {
     if (this.hasGsap) window.gsap.registerPlugin(window.ScrollTrigger);
     this.attachReveal();
     this.attachNavScroll();
-    this.loadVisit();
   }
   componentDidUpdate() { this.attachReveal(); }
-  loadVisit() {
-    window.supabaseSelect('visit_info', 'select=address,address_note,hours_weekday,hours_weekend,phone,email&limit=1')
-      .then((rows) => {
-        if (Array.isArray(rows) && rows[0]) {
-          const v = rows[0];
-          this.setState({ visit: { address: v.address, addressNote: v.address_note, hoursWeekday: v.hours_weekday, hoursWeekend: v.hours_weekend, phone: v.phone, email: v.email } });
-        }
-      })
-      .catch((err) => console.warn('[dumbbrew] could not load visit info from Supabase, showing defaults:', err));
-  }
   attachReveal() {
     const root = this.rootNode || document;
     const els = Array.from(root.querySelectorAll('[data-reveal]')).filter(el => !el.dataset.revealBound);
@@ -188,7 +147,29 @@ class Component extends DCLogic {
     return {
       rootRef: (el) => { this.rootNode = el; },
       logoUrl: window.assetUrl('db-logo.png'),
-      visit: this.state.visit,
+      errorMessage: this.state.errorMessage,
+      handleLogin: async () => {
+        const { AUTHENTIK_URL, AUTHENTIK_CLIENT_ID, AUTHENTIK_REDIRECT_URI } = window.APP_CONFIG;
+        if (!AUTHENTIK_URL || !AUTHENTIK_CLIENT_ID || AUTHENTIK_URL.indexOf('YOUR-VM-IP') !== -1) {
+          this.setState({ errorMessage: 'Sign-in isn’t configured yet — see docs/AUTHENTIK_SETUP.md.' });
+          return;
+        }
+        const verifier = randomVerifier();
+        const challenge = await challengeFor(verifier);
+        const state = randomVerifier();
+        sessionStorage.setItem('dumbbrew_pkce_verifier', verifier);
+        sessionStorage.setItem('dumbbrew_oauth_state', state);
+        const params = new URLSearchParams({
+          client_id: AUTHENTIK_CLIENT_ID,
+          redirect_uri: AUTHENTIK_REDIRECT_URI,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state,
+          code_challenge: challenge,
+          code_challenge_method: 'S256'
+        });
+        window.location.href = AUTHENTIK_URL.replace(/\/$/, '') + '/application/o/authorize/?' + params.toString();
+      }
     };
   }
 }
