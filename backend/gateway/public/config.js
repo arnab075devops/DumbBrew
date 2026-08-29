@@ -24,8 +24,8 @@ window.APP_CONFIG = {
   // '/api/customers/register'. Login/callback (login.html,
   // auth-callback.html) need all three filled in once Authentik is deployed
   // and its OIDC application is created.
-  AUTHENTIK_URL: 'http://YOUR-VM-IP:9000',
-  AUTHENTIK_CLIENT_ID: 'YOUR-AUTHENTIK-OIDC-CLIENT-ID',
+  AUTHENTIK_URL: 'http://localhost:9000',
+  AUTHENTIK_CLIENT_ID: 'ctzDAlfF6GcWNRCRsUzYqMU1ZY94htMdiB4UIGoU',
   AUTHENTIK_REDIRECT_URI: window.location.origin + '/auth-callback.html',
 
   // Terms & Data Storage Policy version the customer is agreeing to on
@@ -50,16 +50,19 @@ window.supabaseSelect = function supabaseSelect(table, query) {
   }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('supabase ' + table + ' http ' + r.status))));
 };
 
-// Signed-in reads/writes (customer data). Supabase's Third-Party Auth
-// verifies Authentik's own id_token directly against the configured
-// issuer — there's no separate "Supabase session" to exchange for, the
-// id_token itself is the bearer token, and auth.uid() in RLS resolves from
-// it. apikey still has to be the anon key (Supabase requires it on every
-// REST call); Authorization is what actually identifies the customer.
-window.supabaseSelectAs = function supabaseSelectAs(table, query, idToken) {
+// Signed-in reads/writes (customer data). Supabase's Third-Party Auth only
+// supports a fixed list of named providers (Firebase, Clerk, WorkOS, Auth0,
+// Cognito) — no generic OIDC issuer — so a self-hosted Authentik can't be
+// registered there directly. Instead, auth-callback.html exchanges
+// Authentik's id_token for a Supabase-compatible JWT via our own backend
+// (POST /api/customers/session, see auth-service), and that's the token
+// passed in here. apikey still has to be the anon key (Supabase requires it
+// on every REST call); Authorization is what actually identifies the
+// customer and makes auth.uid() resolve in RLS.
+window.supabaseSelectAs = function supabaseSelectAs(table, query, accessToken) {
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
   return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || 'select=*'), {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + idToken }
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + accessToken }
   }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('supabase ' + table + ' http ' + r.status))));
 };
 

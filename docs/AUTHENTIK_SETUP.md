@@ -74,17 +74,36 @@ step 3. Copy the provider's **Client ID** into
   own enrollment flow disabled/unlinked from any application if you'd rather
   not expose it.
 
-## 6. Supabase Third-Party Auth
+## 6. Session exchange (replaces Supabase Third-Party Auth)
 
-1. Supabase dashboard → **Authentication → Sign In / Providers → Third
-   Party Auth → Add provider.**
-2. Issuer URL: `http://<host>:9000/application/o/<application-slug>/`
-   (the slug is whatever you named the Application in step 4) — Supabase
-   fetches `.well-known/openid-configuration` from that automatically.
-3. Save. This is what makes `auth.uid()` resolve correctly in the
-   `customers` table's RLS policies for a request carrying Authentik's
-   `id_token` as its bearer token (see `window.supabaseSelectAs` in
-   `config.js` — that's how `account.html` reads a customer's own row).
+Supabase's Third-Party Auth only supports a fixed list of named providers
+(Firebase, Clerk, WorkOS, Auth0, Amazon Cognito) — there's no generic
+"add any OIDC issuer" option, so a self-hosted Authentik can't be added
+there directly. Instead, `auth-service` verifies Authentik's id_token
+itself and mints a Supabase-compatible JWT, so `auth.uid()` in RLS still
+resolves the same way.
+
+1. Get the OAuth2 **provider's client secret** — visible in the response
+   when you create the provider via the API, or Applications → Providers →
+   (your provider) → the client secret field in the dashboard. Authentik
+   signs id_tokens with this as an HS256 HMAC key even for a "public"
+   client, so it doubles as the verification key.
+2. Get Supabase's **legacy JWT secret**: Supabase dashboard → Project
+   Settings → API → JWT Settings → "JWT Secret" (not the anon or
+   service_role key — a separate long base64 string).
+3. Set in `.env` (and in `docker-compose.yml`'s `auth-service.environment`
+   block, so it's actually passed into the container):
+   ```
+   AUTHENTIK_CLIENT_ID=<same value as config.js AUTHENTIK_CLIENT_ID>
+   AUTHENTIK_CLIENT_SECRET=<the provider's client secret>
+   AUTHENTIK_ISSUER=http://<host>:9000/application/o/<application-slug>/
+   SUPABASE_JWT_SECRET=<Supabase's legacy JWT secret>
+   ```
+4. Rebuild `auth-service` (`docker compose up -d --build auth-service`).
+   `auth-callback.html` now POSTs Authentik's id_token to
+   `/api/customers/session`, which verifies it and returns a Supabase JWT;
+   that's what gets stored in `sessionStorage` and sent as the bearer token
+   in `window.supabaseSelectAs` calls (see `account.html`).
 
 ## Verifying it all works
 

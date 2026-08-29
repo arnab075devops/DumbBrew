@@ -1,4 +1,5 @@
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { config } from "../config.js";
 
@@ -151,4 +152,47 @@ export async function registerCustomer(req: FastifyRequest, reply: FastifyReply)
   }
 
   return reply.code(201).send({ ok: true });
+}
+
+const sessionSchema = z.object({ idToken: z.string().min(1) });
+
+// Exchanges Authentik's id_token (from the browser's PKCE flow) for a
+// Supabase-compatible JWT, so account.html can call PostgREST directly and
+// have auth.uid() resolve to the same UUID customers.id was written with at
+// registration time. See the config.ts comment for why this exists instead
+// of Supabase's Third-Party Auth.
+export async function createCustomerSession(req: FastifyRequest, reply: FastifyReply) {
+  if (!config.authentikClientSecret || !config.supabaseJwtSecret) {
+    req.log.error("customer session exchange called but AUTHENTIK_CLIENT_SECRET/SUPABASE_JWT_SECRET not configured");
+    return reply.code(503).send({ error: "session_exchange_unavailable" });
+  }
+
+  const parsed = sessionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
+  }
+
+  let claims: jwt.JwtPayload;
+  try {
+    claims = jwt.verify(parsed.data.idToken, config.authentikClientSecret, {
+      algorithms: ["HS256"],
+      audience: config.authentikClientId,
+      issuer: config.authentikIssuer || undefined
+    }) as jwt.JwtPayload;
+  } catch (err) {
+    req.log.warn(err, "rejected invalid authentik id_token");
+    return reply.code(401).send({ error: "invalid_id_token" });
+  }
+
+  if (typeof claims.sub !== "string") {
+    return reply.code(401).send({ error: "invalid_id_token" });
+  }
+
+  const accessToken = jwt.sign(
+    { sub: claims.sub, role: "authenticated" },
+    config.supabaseJwtSecret,
+    { audience: "authenticated", expiresIn: "1h" }
+  );
+
+  return reply.code(200).send({ access_token: accessToken, expires_in: 3600 });
 }

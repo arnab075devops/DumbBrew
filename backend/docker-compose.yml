@@ -61,6 +61,11 @@ services:
       - SUPABASE_URL=${SUPABASE_URL:-}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
       - TERMS_VERSION=${TERMS_VERSION:-2026-08-30}
+      # Customer login session exchange — see auth-service config.ts comment
+      - AUTHENTIK_CLIENT_ID=${AUTHENTIK_CLIENT_ID:-}
+      - AUTHENTIK_CLIENT_SECRET=${AUTHENTIK_CLIENT_SECRET:-}
+      - AUTHENTIK_ISSUER=${AUTHENTIK_ISSUER:-}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET:-}
     expose:
       - "4001"
     deploy:

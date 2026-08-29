@@ -28,50 +28,102 @@ public dev URL (`https://pub-acdd02b3e347450b80d14a3676db872e.r2.dev`). All
 section photo) are uploaded there — verified live via headless browser, every
 image request on the site resolves through R2 with `200`.
 
-## Legacy Node backend (auth-service, content-service, local Postgres)
+## Local Docker stack — running right now
 
-`content-service` is unused (everything content-related goes straight from
-the browser to Supabase). `auth-service` is now used for one real thing:
-customer registration (see below). Docker compose stack still lives under
-`backend/`, only needed once customer accounts or the admin login are
-actually being used.
+The full `backend/docker-compose.yml` stack is up locally (`docker compose
+up --build -d` from `backend/`), including Authentik. `backend/.env` exists
+(gitignored, not committed) with real secrets, notably a working
+`AUTHENTIK_API_TOKEN` and `SUPABASE_SERVICE_ROLE_KEY`.
 
-## Customer accounts (Authentik SSO) — code written, not deployed yet
+- **http://localhost** — the full site through the real nginx gateway
+  (index/register/login/terms/data-policy/account, all serving `200`).
+- **http://localhost:9000** — Authentik admin (bootstrap admin login is in
+  `backend/.env` as `AUTHENTIK_BOOTSTRAP_EMAIL`/`AUTHENTIK_BOOTSTRAP_PASSWORD`).
+- **http://localhost:3001** — Grafana (pre-existing, from an earlier session).
 
-Registration, login, and per-customer data isolation are built but **not
-live** — Authentik hasn't been deployed anywhere yet, so `login.html`
-correctly refuses to redirect (shows "Sign-in isn't configured yet") and
-`register.html`'s POST will 503 until `auth-service` has real
-`AUTHENTIK_API_TOKEN`/`SUPABASE_SERVICE_ROLE_KEY` values.
+Caution logged here on purpose: the very first attempt at this generated a
+fresh random `.env`, which would have silently orphaned the already-running
+Postgres volume's real credentials on next restart. Caught before anything
+broke — recovered the true original secrets (`localtestpw`-based dev
+values) straight from the live containers' env via `docker inspect`, and
+only layered the new Authentik/Supabase vars on top. If `backend/.env` ever
+needs rebuilding from scratch again, check `docker ps` for already-running
+containers first and recover their real env rather than generating fresh
+secrets blind.
 
-- **Identity**: Authentik (self-hosted), added to
-  `backend/docker-compose.yml` as 4 new services (`authentik-server`,
-  `authentik-worker`, its own `authentik-postgres`, `authentik-redis`) —
-  exposed on host port `9000` directly (no domain/TLS exists yet to
-  path-proxy it through the gateway). `infra/terraform/network.tf` opens
-  that port.
-- **Registration**: `register.html` (email/username/phone/password + a
-  required Terms & Conditions + Data Storage Policy checkbox) posts to a new
-  `POST /api/customers/register` on `auth-service`
-  (`backend/services/auth-service/src/controllers/customers.controller.ts`),
-  which creates the user in Authentik via its admin API and mirrors the
-  profile into a new Supabase `customers` table.
-- **Login**: `login.html` → Authentik OIDC authorize (PKCE, no library, Web
-  Crypto only) → `auth-callback.html` exchanges the code for tokens →
-  `account.html` reads the customer's own row using Authentik's `id_token`
-  directly as the bearer token against Supabase's Third-Party Auth (no
-  `supabase-js`, no separate "Supabase session" — this is the corrected,
-  simpler version of the original plan's `signInWithIdToken` idea, since
-  that API is for Supabase's built-in social providers, not generic
-  Third-Party Auth).
-- **Isolation**: `customers` table has RLS (`auth.uid() = id`) — the pattern
+`content-service` is still unused (content goes straight from the browser
+to Supabase). `auth-service` now does real work: customer registration,
+proven end-to-end (see below).
+
+## Customer accounts (Authentik SSO) — fully live, registration and login both verified end-to-end
+
+- **Registration works end-to-end, verified for real**: `register.html` →
+  `POST /api/customers/register` → creates the user in Authentik → mirrors
+  the profile into Supabase `customers`. Tested via `curl` and in a real
+  browser: got a real `201`, confirmed the row landed in Supabase
+  (service-role key), confirmed a duplicate email/phone correctly 409s, and
+  confirmed RLS isolation live — the anon key sees zero rows in `customers`
+  (no `auth.uid()` without a signed-in identity) while the service-role key
+  sees everything, exactly as designed.
+- **Login now works end-to-end too, verified in a real browser**:
+  `login.html` → Authentik OIDC authorize (PKCE, Web Crypto only, no
+  library) → `auth-callback.html` exchanges the code for tokens → POSTs
+  Authentik's `id_token` to `POST /api/customers/session` (new) → lands on
+  `account.html` showing the signed-in customer's own username/email/phone.
+  Verified by registering a fresh test account (`loginflow_test`) and
+  logging in as them — the page correctly showed their own row via RLS.
+- **Why there's a `/api/customers/session` endpoint at all**: the original
+  plan was Supabase's Third-Party Auth verifying Authentik's `id_token`
+  directly. That turned out not to exist for self-hosted IdPs — Supabase's
+  dashboard only offers a fixed list of named providers (Firebase, Clerk,
+  WorkOS, Auth0, Cognito), no generic "any OIDC issuer" option. Since
+  Authentik's OAuth2 provider signs `id_token`s with HS256 using its own
+  client secret, `auth-service` verifies that signature itself
+  (`jsonwebtoken`, already a dependency — no new package) and mints a
+  Supabase-compatible JWT signed with Supabase's **legacy JWT secret**
+  (Project Settings → API → JWT Settings), giving the exact same
+  `auth.uid()` result Third-Party Auth would have.
+- **The OIDC Provider + Application were created via Authentik's admin API**,
+  not the dashboard — `docs/AUTHENTIK_SETUP.md` step 3-4 originally described
+  manual clicks, but since `AUTHENTIK_API_TOKEN` was already available, the
+  provider (`sub_mode: user_uuid`, HS256, redirect URIs for both
+  `localhost:8088` and `localhost`), a `phone` scope mapping, and the
+  `dumbbrew` Application were all created with `curl` against
+  `/api/v3/providers/oauth2/` etc. Client ID/secret came back in that
+  response and are now live in `config.js` and `backend/.env`.
+- **Getting this fully live took several real fixes**, worth knowing if this
+  ever needs to be redone on another environment:
+  1. `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` had to be set in
+     `backend/.env` (the service-role key is different from the anon key
+     already in `config.js` — Project Settings → API → **service_role**,
+     labeled "secret").
+  2. The first Authentik API token 403'd on user creation — it wasn't tied
+     to the bootstrap admin/superuser account. Fixed with a fresh token
+     generated directly under the admin user.
+  3. `AUTHENTIK_CLIENT_ID`/`AUTHENTIK_CLIENT_SECRET`/`AUTHENTIK_ISSUER`/
+     `SUPABASE_JWT_SECRET` had to be added to **both** `backend/.env` and
+     `docker-compose.yml`'s `auth-service.environment` block — `.env` alone
+     isn't enough, compose only passes through vars it explicitly lists.
+  4. The **gateway container bakes `public/` in at build time** (no volume
+     mount) — every frontend edit (`config.js`, `auth-callback.html`,
+     `account.html`) needed `docker compose up -d --build gateway`, not
+     just a file save, to actually be served.
+  5. The **browser's own HTTP disk cache** kept serving old versions of
+     `config.js`/`account.html` even after rebuilding the gateway and even
+     after restarting the test browser — heuristic caching with no
+     `Cache-Control` header on these files. Cache-busting query params
+     (`?_=<timestamp>`) were needed during verification; real users won't
+     hit this since they're not reloading a page whose server-side content
+     just changed mid-session.
+- **Identity infra**: Authentik (self-hosted), 4 compose services
+  (`authentik-server`, `authentik-worker`, its own `authentik-postgres`,
+  `authentik-redis`), exposed on host port `9000` directly (no domain/TLS
+  yet to path-proxy it through the gateway). `infra/terraform/network.tf`
+  opens that port for the real deployment.
+- **Isolation**: `customers` table RLS (`auth.uid() = id`) is the pattern
   any future per-customer table (orders, favorites, etc.) should follow,
   documented directly above the policy in `supabase/schema.sql`.
-- **What's left**: the one-time manual Authentik/Supabase dashboard
-  configuration in [docs/AUTHENTIK_SETUP.md](docs/AUTHENTIK_SETUP.md) — it
-  needs Authentik actually running first (chicken-and-egg, can't be
-  scripted from outside a live instance).
-- **Known gap**: no session refresh — Authentik's `id_token` is short-lived
+- **Known gap**: no session refresh — the minted session token is 1 hour
   and `account.html` just bounces back to `login.html` once it expires.
   Fine for now, flagged as a follow-up if session length becomes annoying.
 - **Legal content caveat**: `terms.html`/`data-policy.html` are a solid
@@ -79,16 +131,24 @@ correctly refuses to redirect (shows "Sign-in isn't configured yet") and
   asks about shipping this for real, especially the Grievance Officer /
   hosting-region placeholders still in `data-policy.html`.
 
+## Git
+
+Pushed to `main` on GitHub (commit `349810a`, "Add customer accounts with
+Authentik SSO"). The remote (`https://github.com/ArnabAdhikar/DumbBrew.git`)
+reports it moved to `https://github.com/arnab075devops/DumbBrew.git` — push
+still works via GitHub's redirect, but the local `origin` URL hasn't been
+updated to the new canonical one yet.
+
 ## Viewing the site locally
 
-No build step, no Docker needed:
+Two ways, depending on whether you need the backend (registration) to work:
 
-```sh
-cd backend/gateway/public
-python -m http.server 8088
-```
-
-Then open `http://localhost:8088/index.html`.
+- **Full stack (registration works)**: the Docker stack described above,
+  already running — just open `http://localhost`.
+- **Static only, no backend**: `cd backend/gateway/public && python -m
+  http.server 8088`, open `http://localhost:8088/index.html`. Fine for
+  everything except `register.html`'s actual submit (no `auth-service`
+  behind it on this path).
 
 ## Known cosmetic issue
 

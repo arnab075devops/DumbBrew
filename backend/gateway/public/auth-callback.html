@@ -57,10 +57,23 @@ a { color:#8a5527; }
     const tokens = await res.json();
     if (!tokens.id_token) return fail('Identity provider did not return an id token.');
 
-    // Session-only on purpose: Authentik's id_token is short-lived and this
-    // build doesn't implement refresh — logging back in via login.html is
-    // the "session expired" recovery path for now.
-    sessionStorage.setItem('dumbbrew_id_token', tokens.id_token);
+    // Exchange Authentik's id_token for a Supabase-compatible JWT via our
+    // own backend (see auth-service's /api/customers/session) — Supabase's
+    // Third-Party Auth doesn't support generic OIDC issuers like a
+    // self-hosted Authentik, so this session-exchange step stands in for it.
+    const { API_BASE } = window.APP_CONFIG;
+    const sessionRes = await fetch(API_BASE + '/api/customers/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: tokens.id_token })
+    });
+    if (!sessionRes.ok) return fail('Could not establish a session.');
+    const session = await sessionRes.json();
+
+    // Session-only on purpose: this token is short-lived and this build
+    // doesn't implement refresh — logging back in via login.html is the
+    // "session expired" recovery path for now.
+    sessionStorage.setItem('dumbbrew_access_token', session.access_token);
     window.location.href = './account.html';
   } catch (err) {
     fail('Network error while completing sign-in.');

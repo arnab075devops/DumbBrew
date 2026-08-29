@@ -23,13 +23,13 @@ a.home { display:inline-block; margin-top:20px; font-size:13px; color:#8a5527; }
 </div>
 <script>
 (function () {
-  const idToken = sessionStorage.getItem('dumbbrew_id_token');
+  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
   const contentEl = document.getElementById('content');
-  if (!idToken) {
+  if (!accessToken) {
     window.location.href = './login.html';
     return;
   }
-  window.supabaseSelectAs('customers', 'select=username,email,phone_number&limit=1', idToken)
+  window.supabaseSelectAs('customers', 'select=username,email,phone_number&limit=1', accessToken)
     .then((rows) => {
       const me = rows && rows[0];
       if (!me) throw new Error('no profile row');
@@ -40,14 +40,14 @@ a.home { display:inline-block; margin-top:20px; font-size:13px; color:#8a5527; }
         '<button id="logout">Log Out</button><br/>' +
         '<a class="home" href="./index.html">&larr; Back to DumbBrew</a>';
       document.getElementById('logout').addEventListener('click', function () {
-        sessionStorage.removeItem('dumbbrew_id_token');
+        sessionStorage.removeItem('dumbbrew_access_token');
         window.location.href = './index.html';
       });
     })
     .catch(function () {
-      // Most likely cause: the short-lived id_token expired (no refresh
+      // Most likely cause: the short-lived session token expired (no refresh
       // flow yet) — send back through login.html to get a fresh one.
-      sessionStorage.removeItem('dumbbrew_id_token');
+      sessionStorage.removeItem('dumbbrew_access_token');
       window.location.href = './login.html';
     });
 
