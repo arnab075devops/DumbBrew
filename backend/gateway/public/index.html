@@ -214,8 +214,8 @@ a:hover { color: #7d8a4c; }
         </sc-for>
       </div>
       <div data-reveal="true">
-        <div style="aspect-ratio:4/5; background:repeating-linear-gradient(60deg, #9c4a2e, #9c4a2e 14px, #e7dac2 14px, #e7dac2 28px); display:flex; align-items:center; justify-content:center;">
-          <span style="font-family:monospace; font-size:13px; color:#17100a; background:#f0e5d1dd; padding:8px 14px;">tasting night photo</span>
+        <div style="aspect-ratio:4/5; overflow:hidden;">
+          <img src="{{ happeningsImg }}" alt="Pop-up tasting night" style="width:100%; height:100%; object-fit:cover; display:block;"/>
         </div>
       </div>
     </div>
@@ -403,6 +403,7 @@ class Component extends DCLogic {
       logoUrl: window.assetUrl('db-logo.png'),
       storyImg: window.assetUrl('our-story.jpg'),
       coldBrewThumb: window.assetUrl('brew-coldbrew.jpg'),
+      happeningsImg: window.assetUrl('happenings-tasting.jpg'),
       tickerItemsDouble: (() => {
         const items = [
           { title: 'Independence Day Special', desc: '20% off all filter coffee, Aug 15' },

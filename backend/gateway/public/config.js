@@ -4,13 +4,13 @@
 // by Postgres RLS policies in supabase/schema.sql, not by hiding the key).
 window.APP_CONFIG = {
   // Supabase project — see README.md "Supabase setup".
-  SUPABASE_URL: 'https://YOUR-PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR-ANON-KEY',
+  SUPABASE_URL: 'https://odblggwrwksmycpxaptp.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_VVvr-EufI4HAJ7UwgKw-bA_cx94mOFD',
 
   // Cloudflare R2 public bucket base URL, no trailing slash (e.g. a bucket
   // public dev URL or a custom domain mapped to the bucket). Leave empty to
   // fall back to the images already checked into ./assets/.
-  R2_BASE: '',
+  R2_BASE: 'https://pub-acdd02b3e347450b80d14a3676db872e.r2.dev',
 
   // Legacy Node admin backend (auth-service/content-service, see
   // backend/README.md). Not required for the public site — kept only if you
