@@ -1,0 +1,3 @@
+admin dashboard:
+Email: owner@dumbbrew.example
+Password: kBk4cqi5tWdF
