@@ -74,7 +74,7 @@ a { color:#8a5527; }
     // doesn't implement refresh — logging back in via login.html is the
     // "session expired" recovery path for now.
     sessionStorage.setItem('dumbbrew_access_token', session.access_token);
-    window.location.href = './account.html';
+    window.location.href = './index.html';
   } catch (err) {
     fail('Network error while completing sign-in.');
   }

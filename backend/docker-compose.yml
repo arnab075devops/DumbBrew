@@ -92,6 +92,37 @@ services:
           cpus: "0.5"
           memory: 256M
 
+  order-service:
+    <<: *service-common
+    build: ./services/order-service
+    environment:
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=4003
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ISSUER=${JWT_ISSUER:-dumbbrew-auth}
+      # No local Postgres dependency (see src/index.ts) — carts/orders/
+      # sellers/products all live in Supabase, reached via the service-role
+      # key, same as auth-service's customer registration flow.
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET:-}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:?RAZORPAY_KEY_ID is required}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:?RAZORPAY_KEY_SECRET is required}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:?RAZORPAY_WEBHOOK_SECRET is required}
+    # Doesn't touch the shared Postgres, so it doesn't need service-common's
+    # postgres health-dependency — but *service-common still pulls one in;
+    # override it to empty since this service would otherwise wait on a
+    # database it never queries.
+    depends_on: []
+    expose:
+      - "4003"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
   gateway:
     restart: unless-stopped
     build: ./gateway
@@ -100,6 +131,7 @@ services:
     depends_on:
       - auth-service
       - content-service
+      - order-service
     networks:
       - dumbbrew-net
     logging:

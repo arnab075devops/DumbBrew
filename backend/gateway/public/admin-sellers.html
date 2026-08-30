@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seller Applications – DumbBrew Admin</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:680px; margin:0 auto; padding:100px 24px 120px; }
+.card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
+h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; margin:0 0 4px; color:#17100a; }
+.sub { font-size:13px; color:#5a412899; }
+label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:16px; }
+label:first-of-type { margin-top:0; }
+input[type="email"], input[type="password"] { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input:focus { border-color:#c99a54; }
+button.primary { padding:13px 28px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; margin-top:18px; }
+button.primary:disabled { opacity:0.5; cursor:default; }
+button.link { background:none; border:none; color:#8a5527; font-size:13px; cursor:pointer; padding:0; font-weight:500; }
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { padding:8px 16px; border-radius:14px; border:1px solid #3b241422; background:#fff; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; color:#5a4128; }
+.tab.active { background:#17100a; color:#f0e5d1; border-color:#17100a; }
+.seller-row { padding:16px 0; border-top:1px solid #3b241418; }
+.seller-row:first-child { border-top:none; }
+.seller-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.seller-name { font-weight:600; font-size:15px; }
+.seller-date { font-size:12px; color:#5a412899; }
+.seller-desc { font-size:13px; color:#5a4128; margin-bottom:10px; }
+.actions { display:flex; gap:10px; }
+.actions button { padding:8px 16px; border-radius:1px; border:none; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
+.actions .approve { background:#7d8a4c; color:#fff; }
+.actions .reject { background:transparent; color:#a13a2e; border:1px solid #a13a2e55; }
+.msg { font-size:13px; margin-top:14px; }
+.msg.err { color:#a13a2e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="content">Loading&hellip;</div>
+</div>
+<script>
+(function () {
+  const contentEl = document.getElementById('content');
+  let adminToken = sessionStorage.getItem('dumbbrew_admin_access_token');
+  let currentStatus = 'pending';
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  if (!adminToken) {
+    renderLogin();
+  } else {
+    renderDashboard();
+  }
+
+  function renderLogin(errorMsg) {
+    contentEl.innerHTML =
+      '<div class="card">' +
+        '<h1>Admin Sign In</h1>' +
+        '<div class="sub">Seller application review</div>' +
+        '<label for="af-email">Email</label><input type="email" id="af-email"/>' +
+        '<label for="af-password">Password</label><input type="password" id="af-password"/>' +
+        '<button class="primary" id="btn-login">Sign In</button>' +
+        '<div id="login-msg">' + (errorMsg ? '<div class="msg err">' + escapeHtml(errorMsg) + '</div>' : '') + '</div>' +
+      '</div>';
+
+    document.getElementById('btn-login').addEventListener('click', function () {
+      const email = document.getElementById('af-email').value.trim();
+      const password = document.getElementById('af-password').value;
+      const btn = document.getElementById('btn-login');
+      const msgEl = document.getElementById('login-msg');
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Signing in&hellip;</div>';
+      const { API_BASE } = window.APP_CONFIG;
+      fetch(API_BASE + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      })
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            btn.disabled = false;
+            msgEl.innerHTML = '<div class="msg err">Invalid credentials.</div>';
+            return;
+          }
+          adminToken = res.body.accessToken;
+          sessionStorage.setItem('dumbbrew_admin_access_token', adminToken);
+          renderDashboard();
+        })
+        .catch(function () {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">Could not sign in right now.</div>';
+        });
+    });
+  }
+
+  function renderDashboard() {
+    contentEl.innerHTML =
+      '<div class="card">' +
+        '<div style="display:flex; align-items:center; justify-content:space-between;">' +
+          '<h1>Seller Applications</h1>' +
+          '<button class="link" id="btn-logout">Sign Out</button>' +
+        '</div>' +
+        '<div class="tabs" id="tabs">' +
+          ['pending', 'approved', 'rejected'].map(function (s) {
+            return '<div class="tab' + (s === currentStatus ? ' active' : '') + '" data-status="' + s + '">' + s + '</div>';
+          }).join('') +
+        '</div>' +
+        '<div id="sellers">Loading&hellip;</div>' +
+      '</div>';
+
+    document.getElementById('btn-logout').addEventListener('click', function () {
+      sessionStorage.removeItem('dumbbrew_admin_access_token');
+      adminToken = null;
+      renderLogin();
+    });
+    document.querySelectorAll('#tabs .tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        currentStatus = tab.dataset.status;
+        renderDashboard();
+      });
+    });
+
+    loadSellers();
+  }
+
+  function loadSellers() {
+    const el = document.getElementById('sellers');
+    const { API_BASE } = window.APP_CONFIG;
+    fetch(API_BASE + '/api/admin/sellers?status=' + currentStatus, {
+      headers: { Authorization: 'Bearer ' + adminToken }
+    })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          sessionStorage.removeItem('dumbbrew_admin_access_token');
+          renderLogin('Your session expired — please sign in again.');
+          return null;
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        const sellers = data.sellers || [];
+        if (!sellers.length) {
+          el.innerHTML = '<div class="sub">No ' + currentStatus + ' applications.</div>';
+          return;
+        }
+        el.innerHTML = sellers.map(function (s) {
+          const date = new Date(s.applied_at);
+          return '<div class="seller-row" data-id="' + s.id + '">' +
+            '<div class="seller-head">' +
+              '<span class="seller-name">' + escapeHtml(s.store_name) + '</span>' +
+              '<span class="seller-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
+            '</div>' +
+            (s.description ? '<div class="seller-desc">' + escapeHtml(s.description) + '</div>' : '') +
+            (currentStatus === 'pending'
+              ? '<div class="actions"><button class="approve" data-action="approved">Approve</button><button class="reject" data-action="rejected">Reject</button></div>'
+              : '') +
+          '</div>';
+        }).join('');
+
+        el.querySelectorAll('[data-action]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const row = btn.closest('.seller-row');
+            const id = row.dataset.id;
+            const status = btn.dataset.action;
+            btn.disabled = true;
+            fetch(API_BASE + '/api/admin/sellers/' + id, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+              body: JSON.stringify({ status: status })
+            }).then(function () { loadSellers(); });
+          });
+        });
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load applications right now.</div>';
+      });
+  }
+})();
+</script>
+</body>
+</html>

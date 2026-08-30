@@ -18,8 +18,38 @@ optional for the site to function.
 | `gateway` | 80 (public) | nginx reverse proxy + serves the static site, rate limiting, security headers |
 | `auth-service` | 4001 | Admin login/refresh/logout, issues JWTs — optional, not used by the public site |
 | `content-service` | 4002 | Events CRUD, newsletter subscribe/list — admin routes verify the JWT locally using a shared secret; optional, not used by the public site (see Supabase setup in the root README) |
-| `postgres` | 5432 | Single DB, two schemas: `auth`, `content` — separate from Supabase's own Postgres |
+| `order-service` | 4003 | Cart, addresses, checkout, Razorpay payment verification/webhook, seller applications + seller product/sales management, admin seller approval. No local DB — reads/writes Supabase directly with the service-role key (same pattern as auth-service's customer registration) |
+| `postgres` | 5432 | Single DB, two schemas: `auth`, `content` — separate from Supabase's own Postgres. `order-service` does not use it. |
 | `prometheus` / `grafana` / `loki` / `promtail` / `node-exporter` / `cadvisor` | — | Monitoring stack |
+
+### `order-service` env vars
+
+In addition to the shared `JWT_SECRET`/`JWT_ISSUER` (for verifying the admin
+JWT on seller-approval routes) and `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/
+`SUPABASE_JWT_SECRET` (already used by `auth-service`, see its config.ts):
+
+- `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` — from the Razorpay dashboard
+  (test-mode keys are fine for local dev; checkout won't actually charge
+  anything without real ones).
+- `RAZORPAY_WEBHOOK_SECRET` — set when configuring the webhook URL
+  (`https://<your-domain>/api/payments/webhook`) in the Razorpay dashboard;
+  this is what `order-service` uses to verify the webhook is really from
+  Razorpay, since that's the only thing that ever marks an order `paid`.
+
+### Seeding the house seller
+
+DumbBrew's own catalog (existing `brews`/`menu_items`) is migrated into the
+marketplace `products` table by a one-time script, once a house customer
+account exists (register it normally via `register.html`):
+
+```sh
+docker compose exec order-service sh -c \
+  "HOUSE_CUSTOMER_ID=<uuid-of-the-registered-house-account> npm run seed:house-seller"
+```
+
+This creates an `approved`, `is_house = true` row in `sellers` for that
+account and copies every un-migrated `brews`/`menu_items` row into
+`products`, backfilling their new `product_id` column.
 
 ## Run it locally
 

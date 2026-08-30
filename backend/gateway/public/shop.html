@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop – DumbBrew</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:1000px; margin:0 auto; padding:100px 24px 120px; }
+a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; margin:0 0 8px; color:#17100a; }
+.sub { font-size:14px; color:#5a412899; margin-bottom:36px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:22px; }
+.pcard { background:#faf5ea; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px #24191008; display:flex; flex-direction:column; }
+.pcard img { width:100%; aspect-ratio:1; object-fit:cover; background:#3b2414; display:block; }
+.pbody { padding:16px 18px 18px; display:flex; flex-direction:column; flex:1; }
+.pname { font-weight:600; font-size:15px; margin-bottom:4px; }
+.pseller { font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:#8a5527; margin-bottom:8px; }
+.pdesc { font-size:13px; color:#5a4128; flex:1; margin-bottom:12px; line-height:1.5; }
+.prow { display:flex; align-items:center; justify-content:space-between; }
+.pprice { font-weight:700; font-family:'Playfair Display',serif; color:#17100a; }
+.add-btn { padding:9px 16px; background:#c99a54; color:#17100a; border:none; border-radius:1px; font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+.add-btn:disabled { opacity:0.6; cursor:default; }
+.empty { text-align:center; color:#5a412899; padding:60px 0; }
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:#17100a; color:#f0e5d1; padding:12px 22px; border-radius:4px; font-size:13px; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="./index.html">&larr; Back to DumbBrew</a>
+  <h1>Shop</h1>
+  <div class="sub">Everything currently for sale across DumbBrew and our onboarded sellers.</div>
+  <div id="content">Loading&hellip;</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function () {
+  const contentEl = document.getElementById('content');
+  const toastEl = document.getElementById('toast');
+  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    setTimeout(function () { toastEl.classList.remove('show'); }, 2200);
+  }
+
+  // The `sellers` table itself has no public-read RLS policy (only "own
+  // row" — see schema.sql), so a products?select=...,sellers(store_name)
+  // embed would silently come back null for every row under the anon key.
+  // seller_directory is the public-readable view for this — it has no FK
+  // for PostgREST to auto-embed, so it's fetched separately and merged here.
+  Promise.all([
+    window.supabaseSelect('products', 'select=id,name,description,price,image_key,seller_id&active=eq.true&order=sort.asc'),
+    window.supabaseSelect('seller_directory', 'select=id,store_name')
+  ])
+    .then(function (results) {
+      const products = results[0];
+      const sellerNames = {};
+      results[1].forEach(function (s) { sellerNames[s.id] = s.store_name; });
+      if (!products.length) {
+        contentEl.innerHTML = '<div class="empty">Nothing for sale right now — check back soon.</div>';
+        return;
+      }
+      render(products, sellerNames);
+    })
+    .catch(function () {
+      contentEl.innerHTML = '<div class="empty">Could not load the shop right now.</div>';
+    });
+
+  function render(products, sellerNames) {
+    contentEl.innerHTML = '<div class="grid">' + products.map(function (p) {
+      const storeName = sellerNames[p.seller_id];
+      return '<div class="pcard">' +
+        '<img src="' + (p.image_key ? window.assetUrl(p.image_key) : '') + '" alt="' + escapeHtml(p.name) + '"/>' +
+        '<div class="pbody">' +
+          (storeName ? '<div class="pseller">' + escapeHtml(storeName) + '</div>' : '') +
+          '<div class="pname">' + escapeHtml(p.name) + '</div>' +
+          '<div class="pdesc">' + escapeHtml(p.description || '') + '</div>' +
+          '<div class="prow">' +
+            '<span class="pprice">$' + Number(p.price).toFixed(2) + '</span>' +
+            '<button class="add-btn" data-id="' + p.id + '">Add to Cart</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+
+    contentEl.querySelectorAll('.add-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { addToCart(Number(btn.dataset.id), btn); });
+    });
+  }
+
+  function addToCart(productId, btn) {
+    if (!accessToken) {
+      window.location.href = './login.html';
+      return;
+    }
+    btn.disabled = true;
+    window.orderApiRequest('/api/cart/items', {
+      method: 'POST',
+      body: JSON.stringify({ productId: productId, quantity: 1 })
+    }, accessToken)
+      .then(function () {
+        showToast('Added to cart');
+        btn.disabled = false;
+      })
+      .catch(function () {
+        showToast('Could not add that item');
+        btn.disabled = false;
+      });
+  }
+})();
+</script>
+</body>
+</html>

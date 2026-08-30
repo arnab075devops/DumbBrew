@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Cart – DumbBrew</title>
+<script src="./config.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:640px; margin:0 auto; padding:100px 24px 120px; }
+a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+.card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
+h1 { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; margin:0 0 20px; color:#17100a; }
+h2 { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin:0 0 16px; color:#17100a; }
+.item-row { display:flex; align-items:center; gap:16px; padding:16px 0; border-top:1px solid #3b241418; }
+.item-row:first-child { border-top:none; }
+.item-img { width:56px; height:56px; border-radius:8px; object-fit:cover; background:#3b2414; flex:none; }
+.item-info { flex:1; min-width:0; }
+.item-name { font-weight:500; font-size:15px; }
+.item-seller { font-size:12px; color:#5a412899; margin-top:2px; }
+.qty-controls { display:flex; align-items:center; gap:10px; }
+.qty-btn { width:26px; height:26px; border-radius:50%; border:1px solid #3b241433; background:#fff; cursor:pointer; font-size:15px; line-height:1; color:#241a10; }
+.item-total { font-weight:600; min-width:70px; text-align:right; font-size:14px; }
+.remove-btn { background:none; border:none; color:#a13a2e; font-size:12px; cursor:pointer; padding:0; margin-left:8px; }
+.summary-row { display:flex; justify-content:space-between; padding:10px 0; font-size:15px; }
+.summary-row.total { font-weight:700; font-size:18px; border-top:1px solid #3b241422; margin-top:6px; padding-top:16px; }
+.address-option { display:flex; align-items:flex-start; gap:12px; padding:14px; border:1px solid #3b241422; border-radius:8px; margin-bottom:10px; cursor:pointer; }
+.address-option.selected { border-color:#c99a54; background:#c99a5417; }
+.address-option input { margin-top:3px; }
+.address-lines { font-size:14px; line-height:1.5; }
+.address-label { font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#8a5527; }
+label.field-label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:16px; }
+label.field-label:first-of-type { margin-top:0; }
+input[type="text"] { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input[type="text"]:focus { border-color:#c99a54; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+button.link { background:none; border:none; color:#8a5527; font-size:13px; cursor:pointer; padding:0; font-weight:500; }
+button.primary { width:100%; margin-top:24px; padding:16px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; }
+button.primary:disabled { opacity:0.5; cursor:default; }
+.msg { font-size:13px; margin-top:14px; }
+.msg.ok { color:#5a7d3c; }
+.msg.err { color:#a13a2e; }
+.empty { text-align:center; padding:40px 0; color:#5a412899; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="./index.html">&larr; Back to DumbBrew</a>
+  <h1>Your Cart</h1>
+  <div id="content">Loading&hellip;</div>
+</div>
+<script>
+(function () {
+  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
+  const contentEl = document.getElementById('content');
+  if (!accessToken) {
+    window.location.href = './login.html';
+    return;
+  }
+
+  let cart = null;
+  let addresses = [];
+  let selectedAddressId = null;
+  let showAddForm = false;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(n) { return '$' + Number(n).toFixed(2); }
+
+  Promise.all([
+    window.orderApiRequest('/api/cart', { method: 'GET' }, accessToken),
+    window.orderApiRequest('/api/addresses', { method: 'GET' }, accessToken)
+  ])
+    .then(function (results) {
+      cart = results[0];
+      addresses = results[1].addresses || [];
+      const def = addresses.find(function (a) { return a.is_default; });
+      selectedAddressId = def ? def.id : (addresses[0] ? addresses[0].id : null);
+      render();
+    })
+    .catch(function (err) {
+      contentEl.innerHTML = '<div class="card"><div class="msg err">Could not load your cart' +
+        (err && err.status === 401 ? ' — please sign in again.' : '.') + '</div></div>';
+    });
+
+  function itemTotal(it) { return Number(it.products.price) * it.quantity; }
+  function cartTotal() {
+    return (cart.items || []).reduce(function (sum, it) {
+      return it.products && it.products.active ? sum + itemTotal(it) : sum;
+    }, 0);
+  }
+
+  function render() {
+    const items = (cart.items || []).filter(function (it) { return it.products; });
+
+    if (!items.length) {
+      contentEl.innerHTML = '<div class="card empty">Your cart is empty.<br/><br/>' +
+        '<a href="./brews.html" style="color:#8a5527;">Browse the menu &rarr;</a></div>';
+      return;
+    }
+
+    contentEl.innerHTML =
+      '<div class="card" id="items-card"></div>' +
+      '<div class="card">' +
+        '<h2>Deliver to</h2>' +
+        '<div id="addresses"></div>' +
+        '<button class="link" id="btn-toggle-address">' + (showAddForm ? 'Cancel' : '+ Add a new address') + '</button>' +
+        '<div id="address-form"></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="summary-row total"><span>Total</span><span>' + money(cartTotal()) + '</span></div>' +
+        '<button class="primary" id="btn-pay">Pay with Razorpay</button>' +
+        '<div id="pay-msg"></div>' +
+        '<div style="font-size:12px; color:#5a412888; margin-top:10px;">Prepaid only — payment is required to place an order.</div>' +
+      '</div>';
+
+    renderItems(items);
+    renderAddresses();
+    if (showAddForm) renderAddressForm();
+
+    document.getElementById('btn-toggle-address').addEventListener('click', function () {
+      showAddForm = !showAddForm;
+      render();
+    });
+    document.getElementById('btn-pay').addEventListener('click', handlePay);
+    updatePayButton();
+  }
+
+  function renderItems(items) {
+    const el = document.getElementById('items-card');
+    el.innerHTML = items.map(function (it) {
+      const p = it.products;
+      const inactive = !p.active;
+      return '<div class="item-row" data-item-id="' + it.id + '">' +
+        '<img class="item-img" src="' + (p.image_key ? window.assetUrl(p.image_key) : '') + '" alt=""/>' +
+        '<div class="item-info">' +
+          '<div class="item-name">' + escapeHtml(p.name) + (inactive ? ' <span style="color:#a13a2e;">(no longer available)</span>' : '') + '</div>' +
+          '<div class="item-seller">' + escapeHtml(p.sellers && p.sellers.store_name || '') + ' &middot; ' + money(p.price) + ' each</div>' +
+        '</div>' +
+        '<div class="qty-controls">' +
+          '<button class="qty-btn" data-action="dec">&minus;</button>' +
+          '<span>' + it.quantity + '</span>' +
+          '<button class="qty-btn" data-action="inc">+</button>' +
+        '</div>' +
+        '<div class="item-total">' + money(itemTotal(it)) + '</div>' +
+        '<button class="remove-btn" data-action="remove">Remove</button>' +
+      '</div>';
+    }).join('');
+
+    el.querySelectorAll('.item-row').forEach(function (row) {
+      const id = Number(row.dataset.itemId);
+      const item = items.find(function (it) { return it.id === id; });
+      row.querySelector('[data-action="inc"]').addEventListener('click', function () { changeQty(item, item.quantity + 1); });
+      row.querySelector('[data-action="dec"]').addEventListener('click', function () { changeQty(item, item.quantity - 1); });
+      row.querySelector('[data-action="remove"]').addEventListener('click', function () { changeQty(item, 0); });
+    });
+  }
+
+  function changeQty(item, newQty) {
+    window.orderApiRequest('/api/cart/items/' + item.id, {
+      method: 'PATCH',
+      body: JSON.stringify({ quantity: Math.max(0, newQty) })
+    }, accessToken)
+      .then(function () {
+        return window.orderApiRequest('/api/cart', { method: 'GET' }, accessToken);
+      })
+      .then(function (fresh) { cart = fresh; render(); })
+      .catch(function () {
+        document.getElementById('pay-msg').innerHTML = '<div class="msg err">Could not update your cart.</div>';
+      });
+  }
+
+  function renderAddresses() {
+    const el = document.getElementById('addresses');
+    if (!addresses.length) {
+      el.innerHTML = '<div style="font-size:13px; color:#5a412899;">No saved addresses yet.</div>';
+      return;
+    }
+    el.innerHTML = addresses.map(function (a) {
+      return '<label class="address-option' + (a.id === selectedAddressId ? ' selected' : '') + '">' +
+        '<input type="radio" name="address" value="' + a.id + '" ' + (a.id === selectedAddressId ? 'checked' : '') + '/>' +
+        '<div class="address-lines">' +
+          '<div class="address-label">' + escapeHtml(a.label) + '</div>' +
+          escapeHtml(a.line1) + (a.line2 ? ', ' + escapeHtml(a.line2) : '') + '<br/>' +
+          escapeHtml(a.city) + ', ' + escapeHtml(a.state) + ' ' + escapeHtml(a.pincode) + '<br/>' +
+          escapeHtml(a.phone) +
+        '</div>' +
+      '</label>';
+    }).join('');
+    el.querySelectorAll('input[name="address"]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        selectedAddressId = Number(input.value);
+        render();
+      });
+    });
+  }
+
+  function renderAddressForm() {
+    const el = document.getElementById('address-form');
+    el.innerHTML =
+      '<label class="field-label">Label</label><input type="text" id="af-label" value="Home"/>' +
+      '<label class="field-label">Address line 1</label><input type="text" id="af-line1"/>' +
+      '<label class="field-label">Address line 2 (optional)</label><input type="text" id="af-line2"/>' +
+      '<div class="two-col">' +
+        '<div><label class="field-label">City</label><input type="text" id="af-city"/></div>' +
+        '<div><label class="field-label">State</label><input type="text" id="af-state"/></div>' +
+      '</div>' +
+      '<div class="two-col">' +
+        '<div><label class="field-label">PIN code</label><input type="text" id="af-pincode" maxlength="6"/></div>' +
+        '<div><label class="field-label">Phone</label><input type="text" id="af-phone"/></div>' +
+      '</div>' +
+      '<button class="primary" id="btn-save-address" style="margin-top:20px;">Save Address</button>' +
+      '<div id="address-form-msg"></div>';
+
+    document.getElementById('btn-save-address').addEventListener('click', function () {
+      const payload = {
+        label: document.getElementById('af-label').value.trim() || 'Home',
+        line1: document.getElementById('af-line1').value.trim(),
+        line2: document.getElementById('af-line2').value.trim(),
+        city: document.getElementById('af-city').value.trim(),
+        state: document.getElementById('af-state').value.trim(),
+        pincode: document.getElementById('af-pincode').value.trim(),
+        phone: document.getElementById('af-phone').value.trim(),
+        isDefault: addresses.length === 0
+      };
+      const msgEl = document.getElementById('address-form-msg');
+      if (!payload.line1 || !payload.city || !payload.state || !/^\d{6}$/.test(payload.pincode)) {
+        msgEl.innerHTML = '<div class="msg err">Please fill in address line 1, city, state, and a 6-digit PIN code.</div>';
+        return;
+      }
+      window.orderApiRequest('/api/addresses', { method: 'POST', body: JSON.stringify(payload) }, accessToken)
+        .then(function (res) {
+          addresses.push(res.address);
+          selectedAddressId = res.address.id;
+          showAddForm = false;
+          render();
+        })
+        .catch(function () {
+          msgEl.innerHTML = '<div class="msg err">Could not save that address.</div>';
+        });
+    });
+  }
+
+  function updatePayButton() {
+    const btn = document.getElementById('btn-pay');
+    if (!btn) return;
+    btn.disabled = !selectedAddressId;
+  }
+
+  function handlePay() {
+    const msgEl = document.getElementById('pay-msg');
+    const btn = document.getElementById('btn-pay');
+    if (!selectedAddressId) {
+      msgEl.innerHTML = '<div class="msg err">Choose a delivery address first.</div>';
+      return;
+    }
+    btn.disabled = true;
+    msgEl.innerHTML = '<div class="msg">Starting checkout&hellip;</div>';
+
+    window.orderApiRequest('/api/orders/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ addressId: selectedAddressId })
+    }, accessToken)
+      .then(function (order) {
+        if (typeof Razorpay === 'undefined') {
+          msgEl.innerHTML = '<div class="msg err">Payment widget failed to load. Please refresh and try again.</div>';
+          btn.disabled = false;
+          return;
+        }
+        const rzp = new Razorpay({
+          key: order.razorpayKeyId,
+          order_id: order.razorpayOrderId,
+          amount: Math.round(order.amount * 100),
+          currency: 'INR',
+          name: 'DumbBrew',
+          description: 'Order #' + order.orderId,
+          theme: { color: '#c99a54' },
+          handler: function (response) {
+            window.orderApiRequest('/api/payments/verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              })
+            }, accessToken)
+              .then(function () {
+                msgEl.innerHTML = '<div class="msg ok">Payment received — your order is confirmed. <a href="./account.html">View your orders</a></div>';
+              })
+              .catch(function () {
+                msgEl.innerHTML = '<div class="msg ok">Payment received. It may take a moment to confirm — check <a href="./account.html">your orders</a> shortly.</div>';
+              });
+          },
+          modal: {
+            ondismiss: function () {
+              btn.disabled = false;
+              msgEl.innerHTML = '<div class="msg err">Checkout cancelled.</div>';
+            }
+          }
+        });
+        rzp.open();
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        msgEl.innerHTML = '<div class="msg err">' +
+          (err && err.body && err.body.error === 'cart_empty' ? 'Your cart is empty.' : 'Could not start checkout. Please try again.') +
+          '</div>';
+      });
+  }
+})();
+</script>
+</body>
+</html>

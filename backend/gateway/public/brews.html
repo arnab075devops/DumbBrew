@@ -10,6 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="./config.js"></script>
 <script src="./support.js"></script>
+<script src="./auth-nav.js"></script>
+<script src="./cart-nav.js"></script>
 </head>
 <body>
 <x-dc>
@@ -44,9 +46,22 @@ a:hover { color: #7d8a4c; }
       <a href="./menu.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Menu</a>
       <a href="./story.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Story</a>
       <a href="./gallery.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Gallery</a>
+      <a href="./shop.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Shop</a>
       <a href="./visit.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Visit</a>
-      <a href="./login.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Log In</a>
-      <a href="./index.html#order" style="text-decoration:none; padding:12px 26px; background:#c99a54; color:#17100a; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1px; text-transform:uppercase; transition:background 0.35s ease, transform 0.35s ease;" style-hover="background:#b3854a; transform:translateY(-1px);">Order</a>
+      <a href="./login.html" aria-label="Account" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none;" style-hover="color:#8a5527; border-color:#8a552766;">
+        <span style="position:relative; width:15px; height:15px; display:block;">
+          <span style="position:absolute; top:0; left:3.5px; width:8px; height:8px; border-radius:50%; background:currentColor;"></span>
+          <span style="position:absolute; bottom:-1px; left:0; width:15px; height:8px; border-radius:8px 8px 0 0; background:currentColor; overflow:hidden;"></span>
+        </span>
+      </a>
+      <a href="./cart.html" aria-label="Cart" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none; position:relative;" style-hover="color:#8a5527; border-color:#8a552766;">
+        <span style="position:relative; width:16px; height:14px; display:block;">
+          <span style="position:absolute; top:0; left:1px; width:12px; height:8px; border:1.5px solid currentColor; border-top:none; border-radius:0 0 2px 2px; box-sizing:border-box;"></span>
+          <span style="position:absolute; top:-3px; left:3px; width:8px; height:5px; border:1.5px solid currentColor; border-bottom:none; border-radius:3px 3px 0 0; box-sizing:border-box;"></span>
+          <span style="position:absolute; bottom:-2px; left:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+          <span style="position:absolute; bottom:-2px; right:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+        </span>
+      </a>
     </div>
   </div>
 

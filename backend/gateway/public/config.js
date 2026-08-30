@@ -66,6 +66,32 @@ window.supabaseSelectAs = function supabaseSelectAs(table, query, accessToken) {
   }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('supabase ' + table + ' http ' + r.status))));
 };
 
+// Signed-in update (customer editing their own profile). `matchQuery` should
+// pin the row (e.g. 'id=eq.<uuid>') — RLS only allows a customer to touch
+// their own row anyway, but scoping the request explicitly avoids relying on
+// PostgREST's "no filter = all visible rows" behavior.
+window.supabaseUpdateAs = function supabaseUpdateAs(table, matchQuery, patch, accessToken) {
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + matchQuery, {
+    method: 'PATCH',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    },
+    body: JSON.stringify(patch)
+  }).then((r) => {
+    if (r.ok) return r.json();
+    return r.json().catch(() => null).then((body) => {
+      const err = new Error('supabase ' + table + ' update http ' + r.status);
+      err.status = r.status;
+      err.body = body;
+      return Promise.reject(err);
+    });
+  });
+};
+
 // Insert helper for public writes (newsletter signups). RLS policy on the
 // table must explicitly allow anon inserts — see supabase/schema.sql.
 window.supabaseInsert = function supabaseInsert(table, row) {
@@ -80,4 +106,29 @@ window.supabaseInsert = function supabaseInsert(table, row) {
     },
     body: JSON.stringify(row)
   }).then((r) => (r.ok ? true : Promise.reject(new Error('supabase ' + table + ' insert http ' + r.status))));
+};
+
+// Calls order-service (cart/addresses/orders/payments/sellers — see
+// backend/services/order-service) through the gateway, not Supabase
+// directly — that service does its own customer-id scoping server-side
+// rather than relying on RLS passthrough. `path` starts with '/api/...'.
+window.orderApiRequest = function orderApiRequest(path, init, accessToken) {
+  const { API_BASE } = window.APP_CONFIG;
+  init = init || {};
+  return fetch(API_BASE + path, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
+      ...(init.headers || {})
+    }
+  }).then((r) => {
+    if (r.ok) return r.status === 204 ? null : r.json();
+    return r.json().catch(() => null).then((body) => {
+      const err = new Error('order-service ' + path + ' http ' + r.status);
+      err.status = r.status;
+      err.body = body;
+      return Promise.reject(err);
+    });
+  });
 };

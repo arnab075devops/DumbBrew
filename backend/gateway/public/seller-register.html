@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Become a Seller – DumbBrew</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:520px; margin:0 auto; padding:100px 24px 120px; }
+a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+.card { background:#faf5ea; border-radius:14px; padding:36px; box-shadow:0 2px 8px #24191008; }
+h1 { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; margin:0 0 10px; color:#17100a; }
+.sub { font-size:14px; color:#5a4128; line-height:1.7; margin-bottom:28px; }
+label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:22px; }
+label:first-of-type { margin-top:0; }
+input[type="text"], textarea { width:100%; box-sizing:border-box; padding:13px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:15px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input[type="text"]:focus, textarea:focus { border-color:#c99a54; }
+textarea { resize:vertical; min-height:90px; }
+button.primary { margin-top:26px; padding:15px 34px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; }
+button.primary:disabled { opacity:0.5; cursor:default; }
+.msg { font-size:13px; margin-top:16px; }
+.msg.ok { color:#5a7d3c; }
+.msg.err { color:#a13a2e; }
+.status-badge { display:inline-block; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:5px 12px; border-radius:10px; margin-bottom:20px; }
+.status-badge.pending { background:#c99a5422; color:#8a5527; }
+.status-badge.approved { background:#7d8a4c22; color:#5a7d3c; }
+.status-badge.rejected { background:#a13a2e22; color:#a13a2e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="./account.html">&larr; Back to your account</a>
+  <div class="card" id="content">Loading&hellip;</div>
+</div>
+<script>
+(function () {
+  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
+  const contentEl = document.getElementById('content');
+  if (!accessToken) {
+    window.location.href = './login.html';
+    return;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  window.orderApiRequest('/api/sellers/me', { method: 'GET' }, accessToken)
+    .then(function (data) {
+      if (data.seller) {
+        renderExisting(data.seller);
+      } else {
+        renderForm();
+      }
+    })
+    .catch(function () {
+      contentEl.innerHTML = '<div class="msg err">Could not load your seller status right now.</div>';
+    });
+
+  function renderExisting(seller) {
+    const statusText = { pending: 'Application pending', approved: 'Approved', rejected: 'Not approved' }[seller.status] || seller.status;
+    let extra = '';
+    if (seller.status === 'approved') {
+      extra = '<p><a href="./seller-dashboard.html" style="color:#8a5527;">Go to your seller dashboard &rarr;</a></p>';
+    } else if (seller.status === 'pending') {
+      extra = '<p style="font-size:14px; color:#5a4128;">We\'ll review your application soon.</p>';
+    } else {
+      extra = '<p style="font-size:14px; color:#5a4128;">Your application wasn\'t approved this time.</p>';
+    }
+    contentEl.innerHTML =
+      '<h1>' + escapeHtml(seller.store_name) + '</h1>' +
+      '<span class="status-badge ' + escapeHtml(seller.status) + '">' + escapeHtml(statusText) + '</span>' +
+      (seller.description ? '<p style="font-size:14px; color:#5a4128; line-height:1.7;">' + escapeHtml(seller.description) + '</p>' : '') +
+      extra;
+  }
+
+  function renderForm() {
+    contentEl.innerHTML =
+      '<h1>Sell on DumbBrew</h1>' +
+      '<div class="sub">Tell us about your store. Approved sellers list their own products in the shop and get paid out for prepaid orders only.</div>' +
+      '<label for="fld-store">Store name</label>' +
+      '<input type="text" id="fld-store" maxlength="80"/>' +
+      '<label for="fld-desc">Tell customers about your store</label>' +
+      '<textarea id="fld-desc" maxlength="1000"></textarea>' +
+      '<button class="primary" id="btn-apply">Submit Application</button>' +
+      '<div id="apply-msg"></div>';
+
+    const btn = document.getElementById('btn-apply');
+    const msgEl = document.getElementById('apply-msg');
+    btn.addEventListener('click', function () {
+      const storeName = document.getElementById('fld-store').value.trim();
+      const description = document.getElementById('fld-desc').value.trim();
+      if (storeName.length < 2) {
+        msgEl.innerHTML = '<div class="msg err">Store name must be at least 2 characters.</div>';
+        return;
+      }
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Submitting&hellip;</div>';
+      window.orderApiRequest('/api/sellers/apply', {
+        method: 'POST',
+        body: JSON.stringify({ storeName: storeName, description: description })
+      }, accessToken)
+        .then(function (data) {
+          renderExisting(data.seller);
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">' +
+            (err && err.body && err.body.error === 'already_applied' ? 'You\'ve already applied.' : 'Could not submit your application. Please try again.') +
+            '</div>';
+        });
+    });
+  }
+})();
+</script>
+</body>
+</html>

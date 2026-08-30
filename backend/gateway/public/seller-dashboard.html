@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seller Dashboard – DumbBrew</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:680px; margin:0 auto; padding:100px 24px 120px; }
+a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+.card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
+h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; margin:0 0 4px; color:#17100a; }
+h2 { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin:0 0 16px; color:#17100a; }
+.sub { font-size:13px; color:#5a412899; }
+label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:16px; }
+label:first-of-type { margin-top:0; }
+input[type="text"], textarea { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input[type="text"]:focus, textarea:focus { border-color:#c99a54; }
+textarea { resize:vertical; min-height:70px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+button.primary { padding:13px 28px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; margin-top:18px; }
+button.primary:disabled { opacity:0.5; cursor:default; }
+button.link { background:none; border:none; color:#8a5527; font-size:13px; cursor:pointer; padding:0; font-weight:500; }
+.product-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 0; border-top:1px solid #3b241418; font-size:14px; }
+.product-row:first-child { border-top:none; }
+.product-name { font-weight:600; }
+.product-meta { font-size:12px; color:#5a412899; margin-top:2px; }
+.product-price { font-family:'Playfair Display',serif; font-weight:700; color:#17100a; }
+.pill { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:10px; }
+.pill.active { background:#7d8a4c22; color:#5a7d3c; }
+.pill.inactive { background:#a13a2e22; color:#a13a2e; }
+.sale-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-top:1px solid #3b241418; font-size:14px; }
+.sale-row:first-child { border-top:none; }
+.msg { font-size:13px; margin-top:14px; }
+.msg.ok { color:#5a7d3c; }
+.msg.err { color:#a13a2e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="./account.html">&larr; Back to your account</a>
+  <div id="content">Loading&hellip;</div>
+</div>
+<script>
+(function () {
+  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
+  const contentEl = document.getElementById('content');
+  if (!accessToken) {
+    window.location.href = './login.html';
+    return;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(n) { return '$' + Number(n).toFixed(2); }
+
+  window.orderApiRequest('/api/sellers/me', { method: 'GET' }, accessToken)
+    .then(function (data) {
+      if (!data.seller || data.seller.status !== 'approved') {
+        contentEl.innerHTML = '<div class="card">' +
+          '<div class="sub">You need an approved seller application to access this page.</div>' +
+          '<p><a href="./seller-register.html" style="color:#8a5527;">Apply to become a seller &rarr;</a></p>' +
+        '</div>';
+        return;
+      }
+      render(data.seller);
+    })
+    .catch(function () {
+      contentEl.innerHTML = '<div class="card"><div class="msg err">Could not load your seller status.</div></div>';
+    });
+
+  function render(seller) {
+    contentEl.innerHTML =
+      '<div class="card">' +
+        '<h1>' + escapeHtml(seller.store_name) + '</h1>' +
+        '<div class="sub">Seller dashboard</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Add a Product</h2>' +
+        '<label for="pf-name">Name</label><input type="text" id="pf-name"/>' +
+        '<label for="pf-desc">Description</label><textarea id="pf-desc"></textarea>' +
+        '<div class="two-col">' +
+          '<div><label for="pf-price">Price ($)</label><input type="text" id="pf-price"/></div>' +
+          '<div><label for="pf-category">Category</label><input type="text" id="pf-category"/></div>' +
+        '</div>' +
+        '<button class="primary" id="btn-add-product">Add Product</button>' +
+        '<div id="product-form-msg"></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Your Products</h2>' +
+        '<div id="products">Loading&hellip;</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Your Sales</h2>' +
+        '<div class="sub" style="margin-bottom:8px;">Paid orders only.</div>' +
+        '<div id="sales">Loading&hellip;</div>' +
+      '</div>';
+
+    document.getElementById('btn-add-product').addEventListener('click', addProduct);
+    loadProducts();
+    loadSales();
+  }
+
+  function addProduct() {
+    const btn = document.getElementById('btn-add-product');
+    const msgEl = document.getElementById('product-form-msg');
+    const name = document.getElementById('pf-name').value.trim();
+    const description = document.getElementById('pf-desc').value.trim();
+    const price = Number(document.getElementById('pf-price').value);
+    const category = document.getElementById('pf-category').value.trim();
+
+    if (!name || !(price >= 0)) {
+      msgEl.innerHTML = '<div class="msg err">Enter a name and a valid non-negative price.</div>';
+      return;
+    }
+    btn.disabled = true;
+    msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
+    window.orderApiRequest('/api/sellers/products', {
+      method: 'POST',
+      body: JSON.stringify({ name: name, description: description, price: price, category: category || undefined })
+    }, accessToken)
+      .then(function () {
+        btn.disabled = false;
+        msgEl.innerHTML = '<div class="msg ok">Product added.</div>';
+        document.getElementById('pf-name').value = '';
+        document.getElementById('pf-desc').value = '';
+        document.getElementById('pf-price').value = '';
+        document.getElementById('pf-category').value = '';
+        loadProducts();
+      })
+      .catch(function () {
+        btn.disabled = false;
+        msgEl.innerHTML = '<div class="msg err">Could not add that product.</div>';
+      });
+  }
+
+  function loadProducts() {
+    const el = document.getElementById('products');
+    window.orderApiRequest('/api/sellers/products', { method: 'GET' }, accessToken)
+      .then(function (data) {
+        const products = data.products || [];
+        if (!products.length) {
+          el.innerHTML = '<div class="sub">No products yet — add one above.</div>';
+          return;
+        }
+        el.innerHTML = products.map(function (p) {
+          return '<div class="product-row" data-id="' + p.id + '">' +
+            '<div>' +
+              '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+              '<div class="product-meta">' + escapeHtml(p.category || '') + '</div>' +
+            '</div>' +
+            '<div class="product-price">' + money(p.price) + '</div>' +
+            '<span class="pill ' + (p.active ? 'active' : 'inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</span>' +
+            '<button class="link" data-action="toggle">' + (p.active ? 'Deactivate' : 'Activate') + '</button>' +
+          '</div>';
+        }).join('');
+        el.querySelectorAll('[data-action="toggle"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const row = btn.closest('.product-row');
+            const id = Number(row.dataset.id);
+            const product = products.find(function (p) { return p.id === id; });
+            window.orderApiRequest('/api/sellers/products/' + id, {
+              method: 'PATCH',
+              body: JSON.stringify({ active: !product.active })
+            }, accessToken).then(loadProducts);
+          });
+        });
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load your products right now.</div>';
+      });
+  }
+
+  function loadSales() {
+    const el = document.getElementById('sales');
+    window.orderApiRequest('/api/sellers/orders', { method: 'GET' }, accessToken)
+      .then(function (data) {
+        const sales = data.sales || [];
+        if (!sales.length) {
+          el.innerHTML = '<div class="sub">No paid sales yet.</div>';
+          return;
+        }
+        el.innerHTML = sales.map(function (s) {
+          const date = new Date(s.created_at);
+          return '<div class="sale-row">' +
+            '<span>' + s.quantity + '&times; ' + escapeHtml(s.product_name) + '</span>' +
+            '<span>' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
+            '<span>' + money(Number(s.unit_price) * s.quantity) + '</span>' +
+          '</div>';
+        }).join('');
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load your sales right now.</div>';
+      });
+  }
+})();
+</script>
+</body>
+</html>

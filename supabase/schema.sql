@@ -216,10 +216,25 @@ create table if not exists customers (
   email text unique not null,
   username text unique not null,
   phone_number text unique not null,
+  full_name text,
+  status text,
+  status_updated_at timestamptz,
   terms_accepted_at timestamptz not null,
   terms_version text not null,
   created_at timestamptz not null default now()
 );
+alter table customers add column if not exists full_name text;
+alter table customers add column if not exists status text;
+alter table customers add column if not exists status_updated_at timestamptz;
+
+-- Status is a small fixed set of "presence" badges (see account.html) —
+-- constrained here so a bad client write can't put junk on the public
+-- directory view below.
+alter table customers drop constraint if exists customers_status_check;
+alter table customers add constraint customers_status_check check (
+  status is null or status in ('busy', 'out_of_office', 'vacation', 'vibing', 'feeling_hot', 'focusing', 'working')
+);
+
 alter table customers enable row level security;
 
 drop policy if exists "customers read own" on customers;
@@ -229,3 +244,205 @@ create policy "customers update own" on customers for update using (auth.uid() =
 -- No insert/delete policy for anon/authenticated: only auth-service (using
 -- the service-role key, which bypasses RLS) creates rows, during
 -- registration — see backend/services/auth-service/src/routes/customers.routes.ts.
+
+-- Public presence directory: username + status only, readable by everyone
+-- (including anon), so a customer's status badge is visible to other users
+-- without exposing their email/phone through the same channel. Views run
+-- with the privileges of their owner (not the querying role), so this
+-- bypasses the "own row only" RLS policies above by design — keep it to
+-- non-sensitive columns only.
+drop view if exists customer_directory;
+create view customer_directory as
+select id, username, full_name, status, status_updated_at
+from customers;
+
+grant select on customer_directory to anon, authenticated;
+
+-- --- Marketplace: sellers, products, cart, addresses, orders ---
+-- Reads here go straight from the browser (anon key + RLS, same as every
+-- other table above). Writes that matter for money (checkout, payment
+-- status) are done by order-service using the service-role key with its own
+-- app-level scoping to req.customerId — see
+-- backend/services/order-service/src/controllers/*.ts — RLS below is
+-- defense-in-depth for direct PostgREST access, not the only guard.
+
+-- A seller IS a customer account (no separate identity system — reuses the
+-- Authentik SSO already built). The DumbBrew "admin"/house catalog is owned
+-- by a seller row with is_house = true, seeded by registering a normal
+-- customer account for the house brand and approving it — see
+-- backend/services/order-service/src/scripts/seed-house-seller.ts.
+create table if not exists sellers (
+  id uuid primary key references customers(id),
+  store_name text not null,
+  description text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  is_house boolean not null default false,
+  applied_at timestamptz not null default now(),
+  decided_at timestamptz,
+  decided_by text
+);
+alter table sellers enable row level security;
+
+drop policy if exists "sellers read own" on sellers;
+create policy "sellers read own" on sellers for select using (auth.uid() = id);
+-- No public select policy: a pending/rejected application is nobody else's
+-- business. Approved sellers' storefront info is exposed instead via the
+-- seller_directory view below (name only, not status/decision metadata).
+-- No insert/update policy for anon/authenticated: applications are created
+-- and approved/rejected by order-service by using its service-role key
+-- after verifying the customer's own JWT (apply) or the shared admin JWT
+-- (approve/reject) — see sellers.routes.ts / admin-sellers.routes.ts.
+
+drop view if exists seller_directory;
+create view seller_directory as
+select id, store_name from sellers where status = 'approved';
+
+grant select on seller_directory to anon, authenticated;
+
+-- The commerce catalog. Every purchasable item — DumbBrew's own and every
+-- onboarded seller's — is a row here, owned by the seller who listed it.
+create table if not exists products (
+  id bigint generated always as identity primary key,
+  seller_id uuid not null references sellers(id),
+  name text not null,
+  description text not null default '',
+  price numeric(8,2) not null check (price >= 0),
+  image_key text,
+  category text,
+  active boolean not null default true,
+  sort int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table products enable row level security;
+
+drop policy if exists "products public read" on products;
+create policy "products public read" on products for select using (active);
+drop policy if exists "sellers manage own products" on products;
+create policy "sellers manage own products" on products for all
+  using (auth.uid() = seller_id) with check (auth.uid() = seller_id);
+
+-- Links DumbBrew's existing marketing-page rows to their commerce-catalog
+-- counterpart, so brews.html/menu.html can grow an "Add to Cart" button
+-- without duplicating name/price/description into two tables. Populated by
+-- the same seed script that creates the house seller and its products.
+alter table brews add column if not exists product_id bigint references products(id);
+alter table menu_items add column if not exists product_id bigint references products(id);
+
+create table if not exists addresses (
+  id bigint generated always as identity primary key,
+  customer_id uuid not null references customers(id),
+  label text not null default 'Home',
+  line1 text not null,
+  line2 text,
+  city text not null,
+  state text not null,
+  pincode text not null,
+  phone text not null,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now()
+);
+alter table addresses enable row level security;
+
+drop policy if exists "addresses own" on addresses;
+create policy "addresses own" on addresses for all
+  using (auth.uid() = customer_id) with check (auth.uid() = customer_id);
+
+-- One open cart per customer. order-service upserts cart_items directly
+-- (create-cart-if-missing then add/update/remove a line) rather than this
+-- being customer-writable straight from the browser, so the same
+-- service-role-scoped pattern noted at the top of this section applies.
+create table if not exists carts (
+  id bigint generated always as identity primary key,
+  customer_id uuid not null unique references customers(id),
+  created_at timestamptz not null default now()
+);
+alter table carts enable row level security;
+drop policy if exists "carts own" on carts;
+create policy "carts own" on carts for all
+  using (auth.uid() = customer_id) with check (auth.uid() = customer_id);
+
+create table if not exists cart_items (
+  id bigint generated always as identity primary key,
+  cart_id bigint not null references carts(id) on delete cascade,
+  product_id bigint not null references products(id),
+  quantity int not null check (quantity > 0),
+  created_at timestamptz not null default now(),
+  unique (cart_id, product_id)
+);
+alter table cart_items enable row level security;
+drop policy if exists "cart_items via own cart" on cart_items;
+create policy "cart_items via own cart" on cart_items for all
+  using (exists (select 1 from carts c where c.id = cart_id and c.customer_id = auth.uid()))
+  with check (exists (select 1 from carts c where c.id = cart_id and c.customer_id = auth.uid()));
+
+-- payment_status is the ENTIRE "prepaid only" enforcement mechanism: there
+-- is no code path anywhere that treats a non-'paid' order as real. It starts
+-- 'created' when checkout begins (a Razorpay order has been requested but
+-- not yet paid), and only order-service's Razorpay webhook handler — never
+-- the browser — is allowed to move it to 'paid' or 'failed'.
+create table if not exists orders (
+  id bigint generated always as identity primary key,
+  customer_id uuid not null references customers(id),
+  address_id bigint not null references addresses(id),
+  razorpay_order_id text unique,
+  razorpay_payment_id text,
+  amount numeric(10,2) not null check (amount >= 0),
+  payment_status text not null default 'created' check (payment_status in ('created', 'paid', 'failed')),
+  created_at timestamptz not null default now()
+);
+alter table orders enable row level security;
+drop policy if exists "orders read own" on orders;
+create policy "orders read own" on orders for select using (auth.uid() = customer_id);
+-- No customer insert/update policy: orders are only ever written by
+-- order-service (service-role key) during checkout and webhook handling.
+-- (A seller-read policy on this table is added further down, once
+-- order_items exists — see the comment there.)
+
+-- seller_id is copied from products.seller_id at checkout time (not derived
+-- via a join) so a seller's RLS policy here doesn't need to reach through
+-- orders/products just to see their own sales.
+create table if not exists order_items (
+  id bigint generated always as identity primary key,
+  order_id bigint not null references orders(id) on delete cascade,
+  product_id bigint not null references products(id),
+  seller_id uuid not null references sellers(id),
+  quantity int not null check (quantity > 0),
+  unit_price numeric(8,2) not null check (unit_price >= 0)
+);
+alter table order_items enable row level security;
+drop policy if exists "order_items read as customer" on order_items;
+create policy "order_items read as customer" on order_items for select using (
+  exists (select 1 from orders o where o.id = order_id and o.customer_id = auth.uid())
+);
+drop policy if exists "order_items read as seller" on order_items;
+create policy "order_items read as seller" on order_items for select using (auth.uid() = seller_id);
+
+-- Lets a seller's own order_items rows actually join back to their parent
+-- order under seller_orders' security_invoker view below — without this, a
+-- seller has no read grant on orders they didn't place, and the join would
+-- silently drop every row of their own sales. Added here (not next to
+-- orders' other policies above) because it references order_items, which
+-- must exist first.
+drop policy if exists "orders read as seller" on orders;
+create policy "orders read as seller" on orders for select using (
+  exists (select 1 from order_items oi where oi.order_id = orders.id and oi.seller_id = auth.uid())
+);
+
+-- Ready-made "my sales" query for a seller's dashboard: only paid orders,
+-- so an unpaid/failed checkout attempt never shows up as a sale.
+--
+-- security_invoker = true is load-bearing here, unlike customer_directory/
+-- seller_directory above: this view must run with the QUERYING role's RLS
+-- (order_items' "auth.uid() = seller_id" policy), not the view owner's,
+-- otherwise every seller would see every other seller's sales.
+drop view if exists seller_orders;
+create view seller_orders
+with (security_invoker = true) as
+select oi.id as order_item_id, oi.order_id, oi.seller_id, oi.product_id, oi.quantity, oi.unit_price,
+       o.created_at, o.customer_id, p.name as product_name
+from order_items oi
+join orders o on o.id = oi.order_id
+join products p on p.id = oi.product_id
+where o.payment_status = 'paid';
+
+grant select on seller_orders to authenticated;

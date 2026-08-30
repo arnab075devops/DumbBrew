@@ -3,8 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Account – DumbBrew</title>
+<title>My Account – DumbBrew (preview)</title>
 <script src="./config.js"></script>
+<script>
+// PREVIEW-ONLY STUB — not part of the shipped app. Fakes a signed-in
+// session and short-circuits the Supabase calls with canned data so the
+// account.html design can be screenshotted without a live backend.
+sessionStorage.setItem('dumbbrew_access_token', 'preview-token');
+window.supabaseSelectAs = function (table) {
+  if (table === 'customers') {
+    return Promise.resolve([{
+      id: 'preview-id',
+      username: 'arnaba178',
+      email: 'arnaba178@proton.me',
+      phone_number: '+919876543210',
+      full_name: 'Arnab Adhikari',
+      status: 'focusing'
+    }]);
+  }
+  return Promise.resolve([]);
+};
+window.supabaseSelect = function (table) {
+  if (table === 'customer_directory') {
+    return Promise.resolve([
+      { id: 'preview-id', username: 'arnaba178', full_name: 'Arnab Adhikari', status: 'focusing' },
+      { id: 'u2', username: 'priyam', full_name: 'Priya M.', status: 'vibing' },
+      { id: 'u3', username: 'jordank', full_name: null, status: 'working' },
+      { id: 'u4', username: 'samr', full_name: 'Sam R.', status: 'out_of_office' },
+      { id: 'u5', username: 'devika', full_name: 'Devika', status: 'feeling_hot' }
+    ]);
+  }
+  return Promise.resolve([]);
+};
+window.supabaseUpdateAs = function () {
+  return Promise.resolve([{}]);
+};
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -35,25 +69,6 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
 .directory-row:first-child { border-top:none; }
 .directory-name { font-weight:500; }
 .directory-status { display:flex; align-items:center; gap:8px; color:#5a4128; }
-.order-row { padding:16px 0; border-top:1px solid #3b241418; }
-.order-row:first-child { border-top:none; }
-.order-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.order-id { font-weight:600; font-size:14px; }
-.order-date { font-size:12px; color:#5a412899; }
-.order-status { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:10px; }
-.order-status.paid { background:#7d8a4c22; color:#5a7d3c; }
-.order-status.created { background:#c99a5422; color:#8a5527; }
-.order-status.failed { background:#a13a2e22; color:#a13a2e; }
-.order-items { font-size:13px; color:#5a4128; margin-bottom:6px; }
-.order-total { font-weight:700; text-align:right; font-size:14px; }
-.address-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:14px 0; border-top:1px solid #3b241418; font-size:14px; }
-.address-row:first-child { border-top:none; }
-.address-lines { line-height:1.5; }
-.address-label-tag { font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#8a5527; }
-.address-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex:none; }
-.address-actions button { background:none; border:none; font-size:12px; cursor:pointer; padding:0; color:#8a5527; }
-.address-actions button.danger { color:#a13a2e; }
-.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 </style>
 </head>
 <body>
@@ -107,8 +122,6 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
       render(me);
     })
     .catch(function () {
-      // Most likely cause: the short-lived session token expired (no refresh
-      // flow yet) — send back through login.html to get a fresh one.
       sessionStorage.removeItem('dumbbrew_access_token');
       window.location.href = './login.html';
     });
@@ -144,26 +157,9 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
       '</div>' +
 
       '<div class="card">' +
-        '<h1 style="font-size:20px;">Your Orders</h1>' +
-        '<div id="orders">Loading&hellip;</div>' +
-      '</div>' +
-
-      '<div class="card">' +
-        '<h1 style="font-size:20px;">Addresses</h1>' +
-        '<div id="addresses">Loading&hellip;</div>' +
-        '<button class="link" id="btn-toggle-address" style="margin-top:14px; color:#8a5527;">+ Add address</button>' +
-        '<div id="address-form"></div>' +
-      '</div>' +
-
-      '<div class="card">' +
         '<h1 style="font-size:20px;">Right Now</h1>' +
         '<div class="sub" style="margin-bottom:8px;">Who\'s set a status</div>' +
         '<div id="directory">Loading&hellip;</div>' +
-      '</div>' +
-
-      '<div class="card" style="text-align:center;">' +
-        '<div class="sub" style="margin-bottom:10px;">Have your own products to sell?</div>' +
-        '<a href="./seller-register.html" style="color:#8a5527; font-weight:600; font-size:13px; letter-spacing:0.5px; text-decoration:none;">Sell on DumbBrew &rarr;</a>' +
       '</div>';
 
     var grid = document.getElementById('status-grid');
@@ -225,149 +221,6 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
     });
 
     loadDirectory(me);
-    loadOrders();
-    setupAddresses();
-  }
-
-  function orderStatusLabel(status) {
-    return { created: 'Awaiting payment', paid: 'Paid', failed: 'Payment failed' }[status] || status;
-  }
-
-  function loadOrders() {
-    var el = document.getElementById('orders');
-    if (!el) return;
-    window.orderApiRequest('/api/orders', { method: 'GET' }, accessToken)
-      .then(function (data) {
-        var orders = data.orders || [];
-        if (!orders.length) {
-          el.innerHTML = '<div class="sub">No orders yet — <a href="./shop.html" style="color:#8a5527;">start shopping</a>.</div>';
-          return;
-        }
-        el.innerHTML = orders.map(function (o) {
-          var items = (o.order_items || []).map(function (it) {
-            return it.quantity + '&times; ' + escapeHtml(it.products ? it.products.name : 'Item');
-          }).join(', ');
-          var date = new Date(o.created_at);
-          return '<div class="order-row">' +
-            '<div class="order-head">' +
-              '<span class="order-id">Order #' + o.id + '</span>' +
-              '<span class="order-status ' + escapeHtml(o.payment_status) + '">' + escapeHtml(orderStatusLabel(o.payment_status)) + '</span>' +
-            '</div>' +
-            '<div class="order-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</div>' +
-            '<div class="order-items">' + items + '</div>' +
-            '<div class="order-total">$' + Number(o.amount).toFixed(2) + '</div>' +
-          '</div>';
-        }).join('');
-      })
-      .catch(function () {
-        el.innerHTML = '<div class="sub">Couldn\'t load your orders right now.</div>';
-      });
-  }
-
-  var addresses = [];
-  var showAddressForm = false;
-
-  function setupAddresses() {
-    loadAddresses();
-    document.getElementById('btn-toggle-address').addEventListener('click', function () {
-      showAddressForm = !showAddressForm;
-      renderAddressForm();
-    });
-  }
-
-  function loadAddresses() {
-    var el = document.getElementById('addresses');
-    window.orderApiRequest('/api/addresses', { method: 'GET' }, accessToken)
-      .then(function (data) {
-        addresses = data.addresses || [];
-        renderAddresses();
-      })
-      .catch(function () {
-        el.innerHTML = '<div class="sub">Couldn\'t load your addresses right now.</div>';
-      });
-  }
-
-  function renderAddresses() {
-    var el = document.getElementById('addresses');
-    if (!addresses.length) {
-      el.innerHTML = '<div class="sub">No saved addresses yet.</div>';
-      return;
-    }
-    el.innerHTML = addresses.map(function (a) {
-      return '<div class="address-row" data-id="' + a.id + '">' +
-        '<div class="address-lines">' +
-          '<div class="address-label-tag">' + escapeHtml(a.label) + (a.is_default ? ' &middot; Default' : '') + '</div>' +
-          escapeHtml(a.line1) + (a.line2 ? ', ' + escapeHtml(a.line2) : '') + '<br/>' +
-          escapeHtml(a.city) + ', ' + escapeHtml(a.state) + ' ' + escapeHtml(a.pincode) + '<br/>' +
-          escapeHtml(a.phone) +
-        '</div>' +
-        '<div class="address-actions">' +
-          (a.is_default ? '' : '<button data-action="default">Set default</button>') +
-          '<button class="danger" data-action="delete">Delete</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    el.querySelectorAll('.address-row').forEach(function (row) {
-      var id = Number(row.dataset.id);
-      var defaultBtn = row.querySelector('[data-action="default"]');
-      if (defaultBtn) defaultBtn.addEventListener('click', function () {
-        window.orderApiRequest('/api/addresses/' + id, { method: 'PATCH', body: JSON.stringify({ isDefault: true }) }, accessToken)
-          .then(loadAddresses);
-      });
-      row.querySelector('[data-action="delete"]').addEventListener('click', function () {
-        window.orderApiRequest('/api/addresses/' + id, { method: 'DELETE' }, accessToken)
-          .then(loadAddresses);
-      });
-    });
-  }
-
-  function renderAddressForm() {
-    var el = document.getElementById('address-form');
-    var toggleBtn = document.getElementById('btn-toggle-address');
-    toggleBtn.textContent = showAddressForm ? 'Cancel' : '+ Add address';
-    if (!showAddressForm) { el.innerHTML = ''; return; }
-    el.innerHTML =
-      '<label class="field-label" style="margin-top:16px;">Label</label><input type="text" id="af-label" value="Home"/>' +
-      '<label class="field-label">Address line 1</label><input type="text" id="af-line1"/>' +
-      '<label class="field-label">Address line 2 (optional)</label><input type="text" id="af-line2"/>' +
-      '<div class="two-col">' +
-        '<div><label class="field-label">City</label><input type="text" id="af-city"/></div>' +
-        '<div><label class="field-label">State</label><input type="text" id="af-state"/></div>' +
-      '</div>' +
-      '<div class="two-col">' +
-        '<div><label class="field-label">PIN code</label><input type="text" id="af-pincode" maxlength="6"/></div>' +
-        '<div><label class="field-label">Phone</label><input type="text" id="af-phone"/></div>' +
-      '</div>' +
-      '<button class="primary" id="btn-save-address" style="margin-top:20px;">Save Address</button>' +
-      '<div id="address-form-msg"></div>';
-
-    document.getElementById('btn-save-address').addEventListener('click', function () {
-      var payload = {
-        label: document.getElementById('af-label').value.trim() || 'Home',
-        line1: document.getElementById('af-line1').value.trim(),
-        line2: document.getElementById('af-line2').value.trim(),
-        city: document.getElementById('af-city').value.trim(),
-        state: document.getElementById('af-state').value.trim(),
-        pincode: document.getElementById('af-pincode').value.trim(),
-        phone: document.getElementById('af-phone').value.trim(),
-        isDefault: addresses.length === 0
-      };
-      var msgEl = document.getElementById('address-form-msg');
-      if (!payload.line1 || !payload.city || !payload.state || !/^\d{6}$/.test(payload.pincode)) {
-        msgEl.innerHTML = '<div class="msg err">Please fill in address line 1, city, state, and a 6-digit PIN code.</div>';
-        return;
-      }
-      window.orderApiRequest('/api/addresses', { method: 'POST', body: JSON.stringify(payload) }, accessToken)
-        .then(function () {
-          showAddressForm = false;
-          loadAddresses();
-          renderAddressForm();
-        })
-        .catch(function () {
-          msgEl.innerHTML = '<div class="msg err">Could not save that address.</div>';
-        });
-    });
   }
 
   function loadDirectory(me) {
