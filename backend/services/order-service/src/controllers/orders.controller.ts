@@ -6,7 +6,7 @@ import { config } from "../config.js";
 
 export async function listOrders(req: FastifyRequest, reply: FastifyReply) {
   const orders = await supabaseJson<unknown[]>(
-    `orders?customer_id=eq.${req.customerId}&select=id,amount,payment_status,created_at,order_items(id,quantity,unit_price,product_id,products(name,image_key))&order=created_at.desc`
+    `orders?customer_id=eq.${req.customerId}&select=id,amount,payment_status,created_at,order_items(id,quantity,unit_price,product_id,variant_id,fulfillment_status,products(name,image_key),product_variants(title))&order=created_at.desc`
   );
   return reply.send({ orders });
 }
@@ -16,7 +16,9 @@ const checkoutSchema = z.object({ addressId: z.number().int().positive() });
 interface CartItemWithProduct {
   quantity: number;
   product_id: number;
+  variant_id: number | null;
   products: { id: number; price: string; active: boolean; seller_id: string } | null;
+  product_variants: { id: number; price: string; inventory_quantity: number } | null;
 }
 
 // Snapshots the customer's cart into an `orders` + `order_items` pair with
@@ -38,12 +40,22 @@ export async function checkout(req: FastifyRequest, reply: FastifyReply) {
   if (!carts[0]) return reply.code(400).send({ error: "cart_empty" });
 
   const cartItems = await supabaseJson<CartItemWithProduct[]>(
-    `cart_items?cart_id=eq.${carts[0].id}&select=quantity,product_id,products(id,price,active,seller_id)`
+    `cart_items?cart_id=eq.${carts[0].id}&select=quantity,product_id,variant_id,products(id,price,active,seller_id),product_variants(id,price,inventory_quantity)`
   );
   const usable = cartItems.filter((it) => it.products?.active);
   if (!usable.length) return reply.code(400).send({ error: "cart_empty" });
 
-  const amount = usable.reduce((sum, it) => sum + Number(it.products!.price) * it.quantity, 0);
+  // A variant line is only usable if it still has enough stock right now —
+  // re-checked here (not just at add-to-cart time) since another checkout
+  // could have consumed it in the meantime.
+  for (const it of usable) {
+    if (it.variant_id && (!it.product_variants || it.product_variants.inventory_quantity < it.quantity)) {
+      return reply.code(409).send({ error: "out_of_stock", productId: it.product_id });
+    }
+  }
+
+  const unitPrice = (it: CartItemWithProduct) => Number(it.product_variants?.price ?? it.products!.price);
+  const amount = usable.reduce((sum, it) => sum + unitPrice(it) * it.quantity, 0);
   if (amount <= 0) return reply.code(400).send({ error: "cart_empty" });
 
   const orderRows = await supabaseJson<Array<{ id: number }>>("orders", {
@@ -61,9 +73,10 @@ export async function checkout(req: FastifyRequest, reply: FastifyReply) {
   const orderItemsPayload = usable.map((it) => ({
     order_id: orderId,
     product_id: it.product_id,
+    variant_id: it.variant_id,
     seller_id: it.products!.seller_id,
     quantity: it.quantity,
-    unit_price: it.products!.price
+    unit_price: unitPrice(it)
   }));
   await supabaseRequest("order_items", {
     method: "POST",

@@ -110,6 +110,18 @@ services:
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:?RAZORPAY_KEY_ID is required}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:?RAZORPAY_KEY_SECRET is required}
       - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:?RAZORPAY_WEBHOOK_SECRET is required}
+      # Standalone seller identity (application -> admin approval -> generated
+      # credentials) — see src/lib/sellerJwt.ts. Deliberately its own secret,
+      # not shared with JWT_SECRET (admin) or SUPABASE_JWT_SECRET (customer).
+      - SELLER_JWT_SECRET=${SELLER_JWT_SECRET:?SELLER_JWT_SECRET is required}
+      - SELLER_JWT_ISSUER=${SELLER_JWT_ISSUER:-dumbbrew-seller}
+      # Cloudflare R2 write credentials for presigned seller/product image
+      # uploads (src/lib/r2.ts) — distinct from the public-read R2_BASE the
+      # frontend uses directly (gateway/public/config.js).
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:?R2_ACCOUNT_ID is required}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}
+      - R2_BUCKET=${R2_BUCKET:?R2_BUCKET is required}
     # Doesn't touch the shared Postgres, so it doesn't need service-common's
     # postgres health-dependency — but *service-common still pulls one in;
     # override it to empty since this service would otherwise wait on a

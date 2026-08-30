@@ -23,18 +23,25 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
 .tabs { display:flex; gap:10px; margin-bottom:20px; }
 .tab { padding:8px 16px; border-radius:14px; border:1px solid #3b241422; background:#fff; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; color:#5a4128; }
 .tab.active { background:#17100a; color:#f0e5d1; border-color:#17100a; }
-.seller-row { padding:16px 0; border-top:1px solid #3b241418; }
+.seller-row { padding:16px 0; border-top:1px solid #3b241418; display:flex; gap:16px; }
 .seller-row:first-child { border-top:none; }
+.seller-thumb { width:64px; height:64px; border-radius:8px; object-fit:cover; background:#3b241411; flex-shrink:0; }
+.seller-body { flex:1; min-width:0; }
 .seller-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .seller-name { font-weight:600; font-size:15px; }
 .seller-date { font-size:12px; color:#5a412899; }
 .seller-desc { font-size:13px; color:#5a4128; margin-bottom:10px; }
+.seller-meta { font-size:12px; color:#5a4128cc; line-height:1.8; margin-bottom:10px; }
+.seller-meta div { }
 .actions { display:flex; gap:10px; }
 .actions button { padding:8px 16px; border-radius:1px; border:none; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
 .actions .approve { background:#7d8a4c; color:#fff; }
 .actions .reject { background:transparent; color:#a13a2e; border:1px solid #a13a2e55; }
 .msg { font-size:13px; margin-top:14px; }
 .msg.err { color:#a13a2e; }
+.credential-box { background:#17100a; color:#f0e5d1; border-radius:10px; padding:16px 18px; margin-bottom:20px; font-size:13px; line-height:1.9; }
+.credential-box b { font-family:monospace; font-size:14px; }
+.credential-box .close { float:right; background:none; border:none; color:#f0e5d1aa; cursor:pointer; font-size:12px; }
 </style>
 </head>
 <body>
@@ -103,6 +110,7 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
 
   function renderDashboard() {
     contentEl.innerHTML =
+      '<div id="credential-slot"></div>' +
       '<div class="card">' +
         '<div style="display:flex; align-items:center; justify-content:space-between;">' +
           '<h1>Seller Applications</h1>' +
@@ -131,6 +139,20 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
     loadSellers();
   }
 
+  function showCredentials(email, password) {
+    const slot = document.getElementById('credential-slot');
+    if (!slot) return;
+    slot.innerHTML =
+      '<div class="credential-box">' +
+        '<button class="close" id="btn-dismiss-cred">Dismiss</button>' +
+        'Seller approved. Login: <b>' + escapeHtml(email) + '</b> / <b>' + escapeHtml(password) + '</b>' +
+        '<br/>Copy this now and send it to the seller — it will not be shown again.' +
+      '</div>';
+    document.getElementById('btn-dismiss-cred').addEventListener('click', function () {
+      slot.innerHTML = '';
+    });
+  }
+
   function loadSellers() {
     const el = document.getElementById('sellers');
     const { API_BASE } = window.APP_CONFIG;
@@ -154,15 +176,24 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
         }
         el.innerHTML = sellers.map(function (s) {
           const date = new Date(s.applied_at);
+          const imgSrc = s.store_image_key && window.assetUrl ? window.assetUrl(s.store_image_key) : null;
           return '<div class="seller-row" data-id="' + s.id + '">' +
-            '<div class="seller-head">' +
-              '<span class="seller-name">' + escapeHtml(s.store_name) + '</span>' +
-              '<span class="seller-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
+            (imgSrc ? '<img class="seller-thumb" src="' + imgSrc + '"/>' : '<div class="seller-thumb"></div>') +
+            '<div class="seller-body">' +
+              '<div class="seller-head">' +
+                '<span class="seller-name">' + escapeHtml(s.store_name) + '</span>' +
+                '<span class="seller-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
+              '</div>' +
+              '<div class="seller-meta">' +
+                '<div>' + escapeHtml(s.owner_full_name || '') + ' &middot; ' + escapeHtml(s.email || '') + ' &middot; ' + escapeHtml(s.phone || '') + '</div>' +
+                '<div>' + [s.address_line1, s.address_line2, s.city, s.state, s.pincode].filter(Boolean).map(escapeHtml).join(', ') + '</div>' +
+                (s.gst_number ? '<div>GST: ' + escapeHtml(s.gst_number) + '</div>' : '') +
+              '</div>' +
+              (s.description ? '<div class="seller-desc">' + escapeHtml(s.description) + '</div>' : '') +
+              (currentStatus === 'pending'
+                ? '<div class="actions"><button class="approve" data-action="approved">Approve</button><button class="reject" data-action="rejected">Reject</button></div>'
+                : '') +
             '</div>' +
-            (s.description ? '<div class="seller-desc">' + escapeHtml(s.description) + '</div>' : '') +
-            (currentStatus === 'pending'
-              ? '<div class="actions"><button class="approve" data-action="approved">Approve</button><button class="reject" data-action="rejected">Reject</button></div>'
-              : '') +
           '</div>';
         }).join('');
 
@@ -176,7 +207,14 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
               body: JSON.stringify({ status: status })
-            }).then(function () { loadSellers(); });
+            })
+              .then(function (r) { return r.json(); })
+              .then(function (body) {
+                if (body.generatedPassword) {
+                  showCredentials(body.seller.email, body.generatedPassword);
+                }
+                loadSellers();
+              });
           });
         });
       })

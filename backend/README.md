@@ -18,7 +18,7 @@ optional for the site to function.
 | `gateway` | 80 (public) | nginx reverse proxy + serves the static site, rate limiting, security headers |
 | `auth-service` | 4001 | Admin login/refresh/logout, issues JWTs — optional, not used by the public site |
 | `content-service` | 4002 | Events CRUD, newsletter subscribe/list — admin routes verify the JWT locally using a shared secret; optional, not used by the public site (see Supabase setup in the root README) |
-| `order-service` | 4003 | Cart, addresses, checkout, Razorpay payment verification/webhook, seller applications + seller product/sales management, admin seller approval. No local DB — reads/writes Supabase directly with the service-role key (same pattern as auth-service's customer registration) |
+| `order-service` | 4003 | Cart, addresses, checkout, Razorpay payment verification/webhook, public seller applications + standalone seller login, seller product/variant/image/collection/order management, admin seller approval (which generates the seller's login credentials). No local DB — reads/writes Supabase directly with the service-role key (same pattern as auth-service's customer registration) |
 | `postgres` | 5432 | Single DB, two schemas: `auth`, `content` — separate from Supabase's own Postgres. `order-service` does not use it. |
 | `prometheus` / `grafana` / `loki` / `promtail` / `node-exporter` / `cadvisor` | — | Monitoring stack |
 
@@ -35,21 +35,49 @@ JWT on seller-approval routes) and `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/
   (`https://<your-domain>/api/payments/webhook`) in the Razorpay dashboard;
   this is what `order-service` uses to verify the webhook is really from
   Razorpay, since that's the only thing that ever marks an order `paid`.
+- `SELLER_JWT_SECRET` — any random string, distinct from `JWT_SECRET` and
+  `SUPABASE_JWT_SECRET`. Signs the standalone seller login token (sellers are
+  not customers or admins — see `supabase/schema.sql`'s `sellers` comment).
+  `SELLER_JWT_ISSUER` defaults to `dumbbrew-seller`.
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` —
+  Cloudflare R2 **write** credentials (Account → R2 → Manage API Tokens →
+  create one scoped to Object Read & Write on the bucket). Used only to mint
+  presigned upload URLs for seller-application and product images; distinct
+  from the public-read `R2_BASE` URL already in `gateway/public/config.js`.
 
 ### Seeding the house seller
 
 DumbBrew's own catalog (existing `brews`/`menu_items`) is migrated into the
-marketplace `products` table by a one-time script, once a house customer
-account exists (register it normally via `register.html`):
+marketplace `products` table by a one-time script. Sellers are a standalone
+identity now (not a customer account), so this just creates the row
+directly:
 
 ```sh
 docker compose exec order-service sh -c \
-  "HOUSE_CUSTOMER_ID=<uuid-of-the-registered-house-account> npm run seed:house-seller"
+  "HOUSE_STORE_NAME=DumbBrew npm run seed:house-seller"
 ```
 
-This creates an `approved`, `is_house = true` row in `sellers` for that
-account and copies every un-migrated `brews`/`menu_items` row into
-`products`, backfilling their new `product_id` column.
+This creates (or updates) an `approved`, `is_house = true` row in `sellers`
+and copies every un-migrated `brews`/`menu_items` row into `products`,
+backfilling their new `product_id` column.
+
+### Seller onboarding flow
+
+1. Anyone applies at `seller-apply.html` (linked from the site footer) — no
+   login required. `POST /api/sellers/applications` creates a `pending`
+   `sellers` row with no credentials yet.
+2. An admin reviews it at `admin-sellers.html` (same login as the existing
+   admin JWT). Approving (`PATCH /api/admin/sellers/:id`) generates a
+   temporary password, hashes it, and returns the plaintext **once** in that
+   response — copy it immediately, it's never shown again. The admin relays
+   it to the seller manually (no email-sending is wired up in this repo).
+3. The seller logs in at `seller-dashboard.html` (`POST
+   /api/sellers/auth/login`) and is forced through `POST
+   /api/sellers/auth/reset-password` before doing anything else, since
+   `must_reset_password` starts `true`.
+4. From there they manage products (with variants/images/inventory) and
+   collections, and mark their own order lines fulfilled — see the route
+   list in `services/order-service/src/routes/sellers.routes.ts`.
 
 ## Run it locally
 

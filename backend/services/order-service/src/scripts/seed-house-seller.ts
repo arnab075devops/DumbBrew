@@ -1,45 +1,51 @@
 import { supabaseJson, supabaseRequest } from "../lib/supabase.js";
 
 /**
- * One-time seed: makes an already-registered customer account (register it
- * normally via register.html first — there's no separate identity system
- * for sellers) the "house" seller that owns DumbBrew's own catalog, then
- * copies the existing brews/menu_items rows into `products` (owned by that
- * seller) and backfills their product_id FK, so brews.html/menu.html can
- * grow "Add to Cart" buttons without duplicating catalog data.
+ * One-time seed: creates (or updates) the "house" seller that owns
+ * DumbBrew's own catalog, then copies the existing brews/menu_items rows
+ * into `products` (owned by that seller) and backfills their product_id FK,
+ * so brews.html/menu.html can grow "Add to Cart" buttons without
+ * duplicating catalog data.
  *
- * Usage: HOUSE_CUSTOMER_ID=<uuid> [HOUSE_STORE_NAME="DumbBrew"] npm run seed:house-seller
+ * Sellers are a standalone identity now (not a customer account) — the
+ * house seller doesn't need real login credentials since nobody signs into
+ * it via seller-dashboard.html, so this just creates the row directly by
+ * email, matched on re-run.
+ *
+ * Usage: [HOUSE_STORE_NAME="DumbBrew"] [HOUSE_EMAIL=house@dumbbrew.example] npm run seed:house-seller
  */
 async function main() {
-  const customerId = process.env.HOUSE_CUSTOMER_ID;
   const storeName = process.env.HOUSE_STORE_NAME ?? "DumbBrew";
-  if (!customerId) {
-    console.error("HOUSE_CUSTOMER_ID env var is required (register that account via register.html first)");
-    process.exit(1);
-  }
+  const email = (process.env.HOUSE_EMAIL ?? "house@dumbbrew.example").toLowerCase();
 
-  const existing = await supabaseJson<Array<{ id: string }>>(`sellers?id=eq.${customerId}&select=id&limit=1`);
+  const existing = await supabaseJson<Array<{ id: string }>>(
+    `sellers?email=eq.${encodeURIComponent(email)}&select=id&limit=1`
+  );
+  let sellerId: string;
   if (existing[0]) {
-    await supabaseRequest(`sellers?id=eq.${customerId}`, {
+    sellerId = existing[0].id;
+    await supabaseRequest(`sellers?id=eq.${sellerId}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ store_name: storeName, status: "approved", is_house: true })
     });
-    console.log(`Updated existing seller row to house/approved: ${storeName} (${customerId})`);
+    console.log(`Updated existing seller row to house/approved: ${storeName} (${sellerId})`);
   } else {
-    await supabaseRequest("sellers", {
+    const created = await supabaseJson<Array<{ id: string }>>("sellers", {
       method: "POST",
-      headers: { Prefer: "return=minimal" },
+      headers: { Prefer: "return=representation" },
       body: JSON.stringify({
-        id: customerId,
         store_name: storeName,
+        email,
+        owner_full_name: storeName,
         status: "approved",
         is_house: true,
         decided_at: new Date().toISOString(),
         decided_by: "seed-script"
       })
     });
-    console.log(`Created house seller: ${storeName} (${customerId})`);
+    sellerId = created[0].id;
+    console.log(`Created house seller: ${storeName} (${sellerId})`);
   }
 
   const brews = await supabaseJson<
@@ -50,7 +56,7 @@ async function main() {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
-        seller_id: customerId,
+        seller_id: sellerId,
         name: brew.name,
         description: brew.description,
         price: brew.price,
@@ -82,7 +88,7 @@ async function main() {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
-        seller_id: customerId,
+        seller_id: sellerId,
         name: item.name,
         description: item.description,
         price: item.price,

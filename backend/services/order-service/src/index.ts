@@ -8,6 +8,7 @@ import { addressesRoutes } from "./routes/addresses.routes.js";
 import { ordersRoutes } from "./routes/orders.routes.js";
 import { paymentsRoutes } from "./routes/payments.routes.js";
 import { sellersRoutes } from "./routes/sellers.routes.js";
+import { sellerPublicRoutes } from "./routes/sellerPublic.routes.js";
 import { adminSellersRoutes } from "./routes/adminSellers.routes.js";
 import { webhook } from "./controllers/payments.controller.js";
 
@@ -73,6 +74,7 @@ await app.register(addressesRoutes, { prefix: "/api/addresses" });
 await app.register(ordersRoutes, { prefix: "/api/orders" });
 await app.register(paymentsRoutes, { prefix: "/api/payments" });
 await app.register(sellersRoutes, { prefix: "/api/sellers" });
+await app.register(sellerPublicRoutes, { prefix: "/api/sellers" });
 await app.register(adminSellersRoutes, { prefix: "/api/admin/sellers" });
 // Registered directly (not via paymentsRoutes) so it never picks up a
 // requireCustomer hook — Razorpay's server calls this, not a signed-in

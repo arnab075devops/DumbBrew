@@ -9,49 +9,58 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
-.wrap { max-width:680px; margin:0 auto; padding:100px 24px 120px; }
-a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+.wrap { max-width:760px; margin:0 auto; padding:100px 24px 120px; }
 .card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
 h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; margin:0 0 4px; color:#17100a; }
 h2 { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin:0 0 16px; color:#17100a; }
 .sub { font-size:13px; color:#5a412899; }
 label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:16px; }
 label:first-of-type { margin-top:0; }
-input[type="text"], textarea { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
-input[type="text"]:focus, textarea:focus { border-color:#c99a54; }
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], textarea, select { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input:focus, textarea:focus { border-color:#c99a54; }
 textarea { resize:vertical; min-height:70px; }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 button.primary { padding:13px 28px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; margin-top:18px; }
 button.primary:disabled { opacity:0.5; cursor:default; }
 button.link { background:none; border:none; color:#8a5527; font-size:13px; cursor:pointer; padding:0; font-weight:500; }
-.product-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 0; border-top:1px solid #3b241418; font-size:14px; }
+button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px solid #3b241422; border-radius:6px; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
+.product-row { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid #3b241418; font-size:14px; }
 .product-row:first-child { border-top:none; }
+.product-thumb { width:48px; height:48px; border-radius:6px; object-fit:cover; background:#3b241411; flex-shrink:0; }
 .product-name { font-weight:600; }
 .product-meta { font-size:12px; color:#5a412899; margin-top:2px; }
 .product-price { font-family:'Playfair Display',serif; font-weight:700; color:#17100a; }
 .pill { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:10px; }
 .pill.active { background:#7d8a4c22; color:#5a7d3c; }
 .pill.inactive { background:#a13a2e22; color:#a13a2e; }
-.sale-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-top:1px solid #3b241418; font-size:14px; }
+.pill.fulfilled { background:#7d8a4c22; color:#5a7d3c; }
+.pill.unfulfilled { background:#c99a5422; color:#8a5527; }
+.sale-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-top:1px solid #3b241418; font-size:14px; flex-wrap:wrap; }
 .sale-row:first-child { border-top:none; }
 .msg { font-size:13px; margin-top:14px; }
 .msg.ok { color:#5a7d3c; }
 .msg.err { color:#a13a2e; }
+.variant-row { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr auto; gap:8px; margin-top:8px; align-items:center; }
+.variant-row input { padding:9px 10px; font-size:13px; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chip { font-size:12px; background:#3b241411; padding:5px 10px; border-radius:12px; }
+.checkbox-row { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; }
+.checkbox-row input { width:auto; }
+.remove-x { background:none; border:none; color:#a13a2e; cursor:pointer; font-size:16px; padding:0 6px; }
+.collection-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid #3b241418; font-size:14px; }
+.collection-row:first-child { border-top:none; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="home" href="./account.html">&larr; Back to your account</a>
+  <a href="./account.html" style="display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none;">&larr; Back to your account</a>
   <div id="content">Loading&hellip;</div>
 </div>
 <script>
 (function () {
-  const accessToken = sessionStorage.getItem('dumbbrew_access_token');
+  const TOKEN_KEY = 'dumbbrew_seller_access_token';
   const contentEl = document.getElementById('content');
-  if (!accessToken) {
-    window.location.href = './login.html';
-    return;
-  }
+  let token = sessionStorage.getItem(TOKEN_KEY);
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -59,42 +68,139 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
     });
   }
   function money(n) { return '$' + Number(n).toFixed(2); }
+  function thumbUrl(key) { return key && window.assetUrl ? window.assetUrl(key) : null; }
 
-  window.orderApiRequest('/api/sellers/me', { method: 'GET' }, accessToken)
-    .then(function (data) {
-      if (!data.seller || data.seller.status !== 'approved') {
-        contentEl.innerHTML = '<div class="card">' +
-          '<div class="sub">You need an approved seller application to access this page.</div>' +
-          '<p><a href="./seller-register.html" style="color:#8a5527;">Apply to become a seller &rarr;</a></p>' +
-        '</div>';
-        return;
-      }
-      render(data.seller);
-    })
-    .catch(function () {
-      contentEl.innerHTML = '<div class="card"><div class="msg err">Could not load your seller status.</div></div>';
-    });
+  if (!token) {
+    renderLogin();
+  } else {
+    checkSellerStatus();
+  }
 
-  function render(seller) {
+  function renderLogin(errorMsg) {
     contentEl.innerHTML =
       '<div class="card">' +
-        '<h1>' + escapeHtml(seller.store_name) + '</h1>' +
-        '<div class="sub">Seller dashboard</div>' +
-      '</div>' +
+        '<h1>Seller Sign In</h1>' +
+        '<div class="sub">Manage your DumbBrew storefront</div>' +
+        '<label for="lf-email">Email</label><input type="email" id="lf-email"/>' +
+        '<label for="lf-password">Password</label><input type="password" id="lf-password"/>' +
+        '<button class="primary" id="btn-login">Sign In</button>' +
+        '<div id="login-msg">' + (errorMsg ? '<div class="msg err">' + escapeHtml(errorMsg) + '</div>' : '') + '</div>' +
+        '<p style="margin-top:18px;"><a href="./seller-apply.html" style="color:#8a5527; font-size:13px;">Haven\'t applied yet? Partner with us &rarr;</a></p>' +
+      '</div>';
+
+    document.getElementById('btn-login').addEventListener('click', function () {
+      const email = document.getElementById('lf-email').value.trim();
+      const password = document.getElementById('lf-password').value;
+      const btn = document.getElementById('btn-login');
+      const msgEl = document.getElementById('login-msg');
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Signing in&hellip;</div>';
+      const { API_BASE } = window.APP_CONFIG;
+      fetch(API_BASE + '/api/sellers/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      })
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            btn.disabled = false;
+            msgEl.innerHTML = '<div class="msg err">Invalid credentials.</div>';
+            return;
+          }
+          token = res.body.accessToken;
+          sessionStorage.setItem(TOKEN_KEY, token);
+          checkSellerStatus();
+        })
+        .catch(function () {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">Could not sign in right now.</div>';
+        });
+    });
+  }
+
+  function api(path, init) {
+    return window.orderApiRequest(path, init || {}, token).catch(function (err) {
+      if (err && (err.status === 401 || err.status === 403)) {
+        sessionStorage.removeItem(TOKEN_KEY);
+        token = null;
+        renderLogin('Your session expired — please sign in again.');
+      }
+      throw err;
+    });
+  }
+
+  function checkSellerStatus() {
+    contentEl.innerHTML = 'Loading&hellip;';
+    api('/api/sellers/me', { method: 'GET' })
+      .then(function (data) {
+        if (!data.seller) {
+          contentEl.innerHTML = '<div class="card"><div class="msg err">Could not load your seller status.</div></div>';
+          return;
+        }
+        if (data.seller.must_reset_password) {
+          renderForcedReset();
+        } else {
+          renderDashboard(data.seller);
+        }
+      })
+      .catch(function () {});
+  }
+
+  function renderForcedReset() {
+    contentEl.innerHTML =
       '<div class="card">' +
-        '<h2>Add a Product</h2>' +
-        '<label for="pf-name">Name</label><input type="text" id="pf-name"/>' +
-        '<label for="pf-desc">Description</label><textarea id="pf-desc"></textarea>' +
-        '<div class="two-col">' +
-          '<div><label for="pf-price">Price ($)</label><input type="text" id="pf-price"/></div>' +
-          '<div><label for="pf-category">Category</label><input type="text" id="pf-category"/></div>' +
+        '<h1>Set a New Password</h1>' +
+        '<div class="sub">This is your first sign-in — choose a password only you know before continuing.</div>' +
+        '<label for="rf-password">New password (min 8 characters)</label>' +
+        '<input type="password" id="rf-password"/>' +
+        '<button class="primary" id="btn-reset">Set Password</button>' +
+        '<div id="reset-msg"></div>' +
+      '</div>';
+    document.getElementById('btn-reset').addEventListener('click', function () {
+      const btn = document.getElementById('btn-reset');
+      const msgEl = document.getElementById('reset-msg');
+      const newPassword = document.getElementById('rf-password').value;
+      if (newPassword.length < 8) {
+        msgEl.innerHTML = '<div class="msg err">Password must be at least 8 characters.</div>';
+        return;
+      }
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
+      api('/api/sellers/auth/reset-password', { method: 'POST', body: JSON.stringify({ newPassword: newPassword }) })
+        .then(function () { checkSellerStatus(); })
+        .catch(function () {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">Could not set your password. Please try again.</div>';
+        });
+    });
+  }
+
+  // --- Dashboard ---
+
+  let allCollections = [];
+  let editingProductId = null;
+  let variantRows = [];
+  let pendingImages = []; // { imageKey, alt }
+
+  function renderDashboard(seller) {
+    contentEl.innerHTML =
+      '<div class="card">' +
+        '<div style="display:flex; align-items:center; justify-content:space-between;">' +
+          '<div><h1>' + escapeHtml(seller.store_name) + '</h1><div class="sub">Seller dashboard</div></div>' +
+          '<button class="link" id="btn-logout">Sign Out</button>' +
         '</div>' +
-        '<button class="primary" id="btn-add-product">Add Product</button>' +
-        '<div id="product-form-msg"></div>' +
       '</div>' +
+      '<div class="card" id="product-form-card"></div>' +
       '<div class="card">' +
         '<h2>Your Products</h2>' +
         '<div id="products">Loading&hellip;</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Collections</h2>' +
+        '<label for="cf-title">New collection</label>' +
+        '<div style="display:flex; gap:10px;"><input type="text" id="cf-title" placeholder="e.g. Single Origin"/><button class="secondary" id="btn-add-collection">Add</button></div>' +
+        '<div id="collections">Loading&hellip;</div>' +
       '</div>' +
       '<div class="card">' +
         '<h2>Your Sales</h2>' +
@@ -102,47 +208,196 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
         '<div id="sales">Loading&hellip;</div>' +
       '</div>';
 
-    document.getElementById('btn-add-product').addEventListener('click', addProduct);
+    document.getElementById('btn-logout').addEventListener('click', function () {
+      sessionStorage.removeItem(TOKEN_KEY);
+      token = null;
+      renderLogin();
+    });
+    document.getElementById('btn-add-collection').addEventListener('click', addCollection);
+
+    resetProductForm();
+    loadCollections();
     loadProducts();
     loadSales();
   }
 
-  function addProduct() {
-    const btn = document.getElementById('btn-add-product');
+  // --- Product form (add + edit share this) ---
+
+  function resetProductForm() {
+    editingProductId = null;
+    variantRows = [];
+    pendingImages = [];
+    renderProductForm();
+  }
+
+  function renderProductForm(existing) {
+    const card = document.getElementById('product-form-card');
+    card.innerHTML =
+      '<h2>' + (editingProductId ? 'Edit Product' : 'Add a Product') + '</h2>' +
+      '<label for="pf-name">Name</label><input type="text" id="pf-name" value="' + escapeHtml(existing ? existing.name : '') + '"/>' +
+      '<label for="pf-desc">Description</label><textarea id="pf-desc">' + escapeHtml(existing ? existing.description : '') + '</textarea>' +
+      '<div class="two-col">' +
+        '<div><label for="pf-price">Base price ($)</label><input type="number" step="0.01" id="pf-price" value="' + (existing ? existing.price : '') + '"/><div class="sub">Used when there are no variants below.</div></div>' +
+        '<div><label for="pf-category">Category</label><input type="text" id="pf-category" value="' + escapeHtml(existing ? (existing.category || '') : '') + '"/></div>' +
+      '</div>' +
+      '<label>Variants (optional — leave empty for a simple single-price product)</label>' +
+      '<div id="variant-rows"></div>' +
+      '<button type="button" class="secondary" id="btn-add-variant" style="margin-top:10px;">+ Add variant</button>' +
+      '<label>Images</label>' +
+      '<input type="file" id="pf-image-input" accept="image/png,image/jpeg,image/webp" multiple/>' +
+      '<div class="chips" id="image-chips"></div>' +
+      '<label>Collections</label>' +
+      '<div id="collection-checks" class="sub">Loading&hellip;</div>' +
+      '<div style="display:flex; gap:10px; align-items:center;">' +
+        '<button class="primary" id="btn-save-product">' + (editingProductId ? 'Save Changes' : 'Add Product') + '</button>' +
+        (editingProductId ? '<button type="button" class="link" id="btn-cancel-edit">Cancel</button>' : '') +
+      '</div>' +
+      '<div id="product-form-msg"></div>';
+
+    renderVariantRows();
+    renderImageChips();
+    renderCollectionChecks(existing ? (existing.product_collections || []).map(function (pc) { return pc.collection_id; }) : []);
+
+    document.getElementById('btn-add-variant').addEventListener('click', function () {
+      variantRows.push({ title: '', sku: '', price: '', inventoryQuantity: '0' });
+      renderVariantRows();
+    });
+    document.getElementById('pf-image-input').addEventListener('change', function (e) {
+      Array.from(e.target.files).forEach(uploadProductImage);
+      e.target.value = '';
+    });
+    document.getElementById('btn-save-product').addEventListener('click', saveProduct);
+    if (editingProductId) {
+      document.getElementById('btn-cancel-edit').addEventListener('click', resetProductForm);
+    }
+  }
+
+  function renderVariantRows() {
+    const el = document.getElementById('variant-rows');
+    if (!el) return;
+    el.innerHTML = variantRows.map(function (v, i) {
+      return '<div class="variant-row" data-i="' + i + '">' +
+        '<input type="text" placeholder="Title (e.g. 250g)" class="v-title" value="' + escapeHtml(v.title) + '"/>' +
+        '<input type="text" placeholder="SKU" class="v-sku" value="' + escapeHtml(v.sku) + '"/>' +
+        '<input type="number" step="0.01" placeholder="Price" class="v-price" value="' + escapeHtml(v.price) + '"/>' +
+        '<input type="number" placeholder="Stock" class="v-qty" value="' + escapeHtml(v.inventoryQuantity) + '"/>' +
+        '<button type="button" class="remove-x" data-remove="' + i + '">&times;</button>' +
+      '</div>';
+    }).join('');
+    el.querySelectorAll('.variant-row').forEach(function (row) {
+      const i = Number(row.dataset.i);
+      row.querySelector('.v-title').addEventListener('input', function (e) { variantRows[i].title = e.target.value; });
+      row.querySelector('.v-sku').addEventListener('input', function (e) { variantRows[i].sku = e.target.value; });
+      row.querySelector('.v-price').addEventListener('input', function (e) { variantRows[i].price = e.target.value; });
+      row.querySelector('.v-qty').addEventListener('input', function (e) { variantRows[i].inventoryQuantity = e.target.value; });
+    });
+    el.querySelectorAll('[data-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        variantRows.splice(Number(btn.dataset.remove), 1);
+        renderVariantRows();
+      });
+    });
+  }
+
+  function uploadProductImage(file) {
+    const chipsEl = document.getElementById('image-chips');
+    const placeholderId = 'up-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    chipsEl.insertAdjacentHTML('beforeend', '<span class="chip" id="' + placeholderId + '">Uploading&hellip;</span>');
+    api('/api/sellers/uploads/presign', { method: 'POST', body: JSON.stringify({ fileName: file.name, contentType: file.type }) })
+      .then(function (data) {
+        return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+          .then(function (r) {
+            if (!r.ok) throw new Error('upload failed');
+            pendingImages.push({ imageKey: data.imageKey, alt: file.name });
+            renderImageChips();
+          });
+      })
+      .catch(function () {
+        const el = document.getElementById(placeholderId);
+        if (el) el.textContent = 'Upload failed';
+      });
+  }
+
+  function renderImageChips() {
+    const el = document.getElementById('image-chips');
+    if (!el) return;
+    el.innerHTML = pendingImages.map(function (img, i) {
+      return '<span class="chip">' + escapeHtml(img.alt || img.imageKey) + ' <button type="button" class="remove-x" data-rm-img="' + i + '">&times;</button></span>';
+    }).join('');
+    el.querySelectorAll('[data-rm-img]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        pendingImages.splice(Number(btn.dataset.rmImg), 1);
+        renderImageChips();
+      });
+    });
+  }
+
+  function renderCollectionChecks(selectedIds) {
+    const el = document.getElementById('collection-checks');
+    if (!el) return;
+    if (!allCollections.length) {
+      el.innerHTML = '<div class="sub">No collections yet — add one below first, then it\'ll show up here.</div>';
+      return;
+    }
+    el.innerHTML = allCollections.map(function (c) {
+      const checked = selectedIds.indexOf(c.id) !== -1 ? ' checked' : '';
+      return '<div class="checkbox-row"><input type="checkbox" class="coll-check" value="' + c.id + '"' + checked + '/><span>' + escapeHtml(c.title) + '</span></div>';
+    }).join('');
+  }
+
+  function saveProduct() {
+    const btn = document.getElementById('btn-save-product');
     const msgEl = document.getElementById('product-form-msg');
     const name = document.getElementById('pf-name').value.trim();
     const description = document.getElementById('pf-desc').value.trim();
     const price = Number(document.getElementById('pf-price').value);
     const category = document.getElementById('pf-category').value.trim();
+    const collectionIds = Array.from(document.querySelectorAll('.coll-check:checked')).map(function (el) { return Number(el.value); });
 
     if (!name || !(price >= 0)) {
-      msgEl.innerHTML = '<div class="msg err">Enter a name and a valid non-negative price.</div>';
+      msgEl.innerHTML = '<div class="msg err">Enter a name and a valid non-negative base price.</div>';
       return;
     }
+    const variants = variantRows
+      .filter(function (v) { return v.title.trim(); })
+      .map(function (v, i) {
+        return { title: v.title.trim(), sku: v.sku.trim() || undefined, price: Number(v.price) || 0, inventoryQuantity: Number(v.inventoryQuantity) || 0, position: i };
+      });
+    const images = pendingImages.map(function (img, i) { return { imageKey: img.imageKey, alt: img.alt, position: i }; });
+
     btn.disabled = true;
     msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
-    window.orderApiRequest('/api/sellers/products', {
-      method: 'POST',
-      body: JSON.stringify({ name: name, description: description, price: price, category: category || undefined })
-    }, accessToken)
+    const payload = { name: name, description: description, price: price, category: category || undefined, variants: variants, images: images, collectionIds: collectionIds };
+    if (images[0]) payload.imageKey = images[0].imageKey;
+
+    const req = editingProductId
+      ? api('/api/sellers/products/' + editingProductId, { method: 'PATCH', body: JSON.stringify(payload) })
+      : api('/api/sellers/products', { method: 'POST', body: JSON.stringify(payload) });
+
+    req
       .then(function () {
-        btn.disabled = false;
-        msgEl.innerHTML = '<div class="msg ok">Product added.</div>';
-        document.getElementById('pf-name').value = '';
-        document.getElementById('pf-desc').value = '';
-        document.getElementById('pf-price').value = '';
-        document.getElementById('pf-category').value = '';
+        resetProductForm();
         loadProducts();
       })
       .catch(function () {
         btn.disabled = false;
-        msgEl.innerHTML = '<div class="msg err">Could not add that product.</div>';
+        msgEl.innerHTML = '<div class="msg err">Could not save that product.</div>';
       });
+  }
+
+  function editProduct(product) {
+    editingProductId = product.id;
+    variantRows = (product.product_variants || []).map(function (v) {
+      return { title: v.title, sku: v.sku || '', price: String(v.price), inventoryQuantity: String(v.inventory_quantity) };
+    });
+    pendingImages = (product.product_images || []).map(function (img) { return { imageKey: img.image_key, alt: img.alt }; });
+    renderProductForm(product);
+    document.getElementById('product-form-card').scrollIntoView({ behavior: 'smooth' });
   }
 
   function loadProducts() {
     const el = document.getElementById('products');
-    window.orderApiRequest('/api/sellers/products', { method: 'GET' }, accessToken)
+    api('/api/sellers/products', { method: 'GET' })
       .then(function (data) {
         const products = data.products || [];
         if (!products.length) {
@@ -150,25 +405,35 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
           return;
         }
         el.innerHTML = products.map(function (p) {
+          const variants = p.product_variants || [];
+          const totalStock = variants.reduce(function (sum, v) { return sum + v.inventory_quantity; }, 0);
+          const priceLabel = variants.length ? (variants.length + ' variant' + (variants.length > 1 ? 's' : '')) : money(p.price);
+          const stockLabel = variants.length ? (totalStock + ' in stock') : 'untracked';
+          const imgKey = (p.product_images && p.product_images[0] && p.product_images[0].image_key) || p.image_key;
+          const thumb = thumbUrl(imgKey);
           return '<div class="product-row" data-id="' + p.id + '">' +
-            '<div>' +
+            (thumb ? '<img class="product-thumb" src="' + thumb + '"/>' : '<div class="product-thumb"></div>') +
+            '<div style="flex:1;">' +
               '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
-              '<div class="product-meta">' + escapeHtml(p.category || '') + '</div>' +
+              '<div class="product-meta">' + escapeHtml(p.category || '') + ' &middot; ' + stockLabel + '</div>' +
             '</div>' +
-            '<div class="product-price">' + money(p.price) + '</div>' +
+            '<div class="product-price">' + priceLabel + '</div>' +
             '<span class="pill ' + (p.active ? 'active' : 'inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</span>' +
+            '<button class="link" data-action="edit">Edit</button>' +
             '<button class="link" data-action="toggle">' + (p.active ? 'Deactivate' : 'Activate') + '</button>' +
           '</div>';
         }).join('');
+        el.querySelectorAll('[data-action="edit"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const id = Number(btn.closest('.product-row').dataset.id);
+            editProduct(products.find(function (p) { return p.id === id; }));
+          });
+        });
         el.querySelectorAll('[data-action="toggle"]').forEach(function (btn) {
           btn.addEventListener('click', function () {
-            const row = btn.closest('.product-row');
-            const id = Number(row.dataset.id);
+            const id = Number(btn.closest('.product-row').dataset.id);
             const product = products.find(function (p) { return p.id === id; });
-            window.orderApiRequest('/api/sellers/products/' + id, {
-              method: 'PATCH',
-              body: JSON.stringify({ active: !product.active })
-            }, accessToken).then(loadProducts);
+            api('/api/sellers/products/' + id, { method: 'PATCH', body: JSON.stringify({ active: !product.active }) }).then(loadProducts);
           });
         });
       })
@@ -177,9 +442,50 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
       });
   }
 
+  // --- Collections ---
+
+  function loadCollections() {
+    const el = document.getElementById('collections');
+    api('/api/sellers/collections', { method: 'GET' })
+      .then(function (data) {
+        allCollections = data.collections || [];
+        if (!allCollections.length) {
+          el.innerHTML = '<div class="sub">No collections yet.</div>';
+        } else {
+          el.innerHTML = allCollections.map(function (c) {
+            return '<div class="collection-row" data-id="' + c.id + '"><span>' + escapeHtml(c.title) + '</span><button class="link" data-del-collection>Delete</button></div>';
+          }).join('');
+          el.querySelectorAll('[data-del-collection]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              const id = btn.closest('.collection-row').dataset.id;
+              api('/api/sellers/collections/' + id, { method: 'DELETE' }).then(loadCollections);
+            });
+          });
+        }
+        const selected = editingProductId ? Array.from(document.querySelectorAll('.coll-check:checked')).map(function (e) { return Number(e.value); }) : [];
+        renderCollectionChecks(selected);
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load collections right now.</div>';
+      });
+  }
+
+  function addCollection() {
+    const input = document.getElementById('cf-title');
+    const title = input.value.trim();
+    if (!title) return;
+    api('/api/sellers/collections', { method: 'POST', body: JSON.stringify({ title: title }) })
+      .then(function () {
+        input.value = '';
+        loadCollections();
+      });
+  }
+
+  // --- Sales / fulfillment ---
+
   function loadSales() {
     const el = document.getElementById('sales');
-    window.orderApiRequest('/api/sellers/orders', { method: 'GET' }, accessToken)
+    api('/api/sellers/orders', { method: 'GET' })
       .then(function (data) {
         const sales = data.sales || [];
         if (!sales.length) {
@@ -188,12 +494,20 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
         }
         el.innerHTML = sales.map(function (s) {
           const date = new Date(s.created_at);
-          return '<div class="sale-row">' +
+          return '<div class="sale-row" data-id="' + s.order_item_id + '">' +
             '<span>' + s.quantity + '&times; ' + escapeHtml(s.product_name) + '</span>' +
             '<span>' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
             '<span>' + money(Number(s.unit_price) * s.quantity) + '</span>' +
+            '<span class="pill ' + (s.fulfillment_status || 'unfulfilled') + '">' + (s.fulfillment_status || 'unfulfilled') + '</span>' +
+            (s.fulfillment_status !== 'fulfilled' ? '<button class="link" data-fulfill>Mark fulfilled</button>' : '') +
           '</div>';
         }).join('');
+        el.querySelectorAll('[data-fulfill]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const id = btn.closest('.sale-row').dataset.id;
+            api('/api/sellers/orders/' + id + '/fulfill', { method: 'PATCH' }).then(loadSales);
+          });
+        });
       })
       .catch(function () {
         el.innerHTML = '<div class="sub">Couldn\'t load your sales right now.</div>';

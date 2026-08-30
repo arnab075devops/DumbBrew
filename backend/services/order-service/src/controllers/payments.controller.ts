@@ -64,6 +64,27 @@ export async function webhook(req: FastifyRequest, reply: FastifyReply) {
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ payment_status: "paid", razorpay_payment_id: razorpayPaymentId ?? null })
       });
+
+      // Decrement inventory now that the order is confirmed paid — not at
+      // checkout time, since an abandoned/failed checkout must not hold
+      // stock hostage. Only variant-tracked lines carry inventory; simple
+      // products (no variant) are untracked.
+      const lines = await supabaseJson<Array<{ variant_id: number | null; quantity: number }>>(
+        `order_items?order_id=eq.${order.id}&variant_id=not.is.null&select=variant_id,quantity`
+      );
+      for (const line of lines) {
+        const variant = await supabaseJson<Array<{ inventory_quantity: number }>>(
+          `product_variants?id=eq.${line.variant_id}&select=inventory_quantity&limit=1`
+        );
+        if (!variant[0]) continue;
+        const nextQuantity = Math.max(0, variant[0].inventory_quantity - line.quantity);
+        await supabaseRequest(`product_variants?id=eq.${line.variant_id}`, {
+          method: "PATCH",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ inventory_quantity: nextQuantity })
+        });
+      }
+
       // Only now does the cart actually empty — an unpaid/abandoned
       // checkout attempt leaves it untouched so the customer can retry.
       const carts = await supabaseJson<Array<{ id: number }>>(

@@ -26,7 +26,23 @@ export const config = {
   jwtSecret: required("JWT_SECRET"),
   jwtIssuer: process.env.JWT_ISSUER ?? "dumbbrew-auth",
 
+  // Seller accounts are a standalone identity system (email + argon2
+  // password hash, generated on admin approval — not Authentik, not a
+  // customer account). Deliberately a separate secret from the admin/customer
+  // ones above so a leaked seller token can't be replayed as either.
+  sellerJwtSecret: required("SELLER_JWT_SECRET"),
+  sellerJwtIssuer: process.env.SELLER_JWT_ISSUER ?? "dumbbrew-seller",
+
   razorpayKeyId: required("RAZORPAY_KEY_ID"),
   razorpayKeySecret: required("RAZORPAY_KEY_SECRET"),
-  razorpayWebhookSecret: required("RAZORPAY_WEBHOOK_SECRET")
+  razorpayWebhookSecret: required("RAZORPAY_WEBHOOK_SECRET"),
+
+  // Cloudflare R2 write credentials (S3-compatible), used only to mint
+  // presigned PUT URLs — this service never proxies the file bytes
+  // themselves. Distinct from the public-read R2_BASE the frontend uses
+  // (gateway/public/config.js) since that one has no write access.
+  r2AccountId: required("R2_ACCOUNT_ID"),
+  r2AccessKeyId: required("R2_ACCESS_KEY_ID"),
+  r2SecretAccessKey: required("R2_SECRET_ACCESS_KEY"),
+  r2Bucket: required("R2_BUCKET")
 };

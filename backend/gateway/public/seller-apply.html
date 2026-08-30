@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partner With Us – DumbBrew</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
+.wrap { max-width:600px; margin:0 auto; padding:100px 24px 120px; }
+a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
+.card { background:#faf5ea; border-radius:14px; padding:36px; box-shadow:0 2px 8px #24191008; }
+h1 { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; margin:0 0 10px; color:#17100a; }
+.sub { font-size:14px; color:#5a4128; line-height:1.7; margin-bottom:28px; }
+label { display:block; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; margin-top:20px; }
+label:first-of-type { margin-top:0; }
+input[type="text"], input[type="email"], input[type="tel"], textarea { width:100%; box-sizing:border-box; padding:13px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:15px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input:focus, textarea:focus { border-color:#c99a54; }
+textarea { resize:vertical; min-height:80px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.hint { font-size:12px; color:#5a412899; margin-top:6px; }
+button.primary { margin-top:28px; padding:15px 34px; background:#17100a; color:#f0e5d1; border:none; border-radius:1px; font-weight:600; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; }
+button.primary:disabled { opacity:0.5; cursor:default; }
+button.secondary { padding:10px 16px; background:#fff; color:#5a4128; border:1px solid #3b241422; border-radius:6px; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
+.msg { font-size:13px; margin-top:16px; }
+.msg.ok { color:#5a7d3c; }
+.msg.err { color:#a13a2e; }
+.status-badge { display:inline-block; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:5px 12px; border-radius:10px; margin-bottom:20px; }
+.status-badge.pending { background:#c99a5422; color:#8a5527; }
+.status-badge.approved { background:#7d8a4c22; color:#5a7d3c; }
+.status-badge.rejected { background:#a13a2e22; color:#a13a2e; }
+.file-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
+.thumb { width:56px; height:56px; border-radius:6px; object-fit:cover; background:#3b241411; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="./index.html">&larr; Back to DumbBrew</a>
+  <div class="card" id="content">Loading&hellip;</div>
+</div>
+<script>
+(function () {
+  const contentEl = document.getElementById('content');
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  renderForm();
+
+  function renderConfirmation(seller) {
+    const statusText = { pending: 'Application received', approved: 'Approved', rejected: 'Not approved this time' }[seller.status] || seller.status;
+    contentEl.innerHTML =
+      '<h1>' + escapeHtml(seller.store_name) + '</h1>' +
+      '<span class="status-badge ' + escapeHtml(seller.status) + '">' + escapeHtml(statusText) + '</span>' +
+      '<p style="font-size:14px; color:#5a4128; line-height:1.7;">Thanks — we\'ll review your application and reach out at ' + escapeHtml(seller.email) + ' once it\'s decided. There\'s nothing else to do here for now.</p>';
+  }
+
+  function renderForm() {
+    contentEl.innerHTML =
+      '<h1>Partner With DumbBrew</h1>' +
+      '<div class="sub">Sell your coffee, bakes, or goods through DumbBrew\'s marketplace. Tell us about your store below — once approved, we\'ll set you up with a seller dashboard login. No DumbBrew account needed to apply.</div>' +
+      '<label for="fld-store">Store / cart name</label>' +
+      '<input type="text" id="fld-store" maxlength="80"/>' +
+      '<label for="fld-owner">Owner\'s full name</label>' +
+      '<input type="text" id="fld-owner" maxlength="120"/>' +
+      '<div class="two-col">' +
+        '<div><label for="fld-email">Email</label><input type="email" id="fld-email"/></div>' +
+        '<div><label for="fld-phone">Phone</label><input type="tel" id="fld-phone"/></div>' +
+      '</div>' +
+      '<label for="fld-line1">Store address</label>' +
+      '<input type="text" id="fld-line1" placeholder="Address line 1" maxlength="200"/>' +
+      '<input type="text" id="fld-line2" placeholder="Address line 2 (optional)" maxlength="200" style="margin-top:10px;"/>' +
+      '<div class="two-col" style="margin-top:10px;">' +
+        '<input type="text" id="fld-city" placeholder="City"/>' +
+        '<input type="text" id="fld-state" placeholder="State"/>' +
+      '</div>' +
+      '<div class="two-col" style="margin-top:10px;">' +
+        '<input type="text" id="fld-pincode" placeholder="Pincode"/>' +
+        '<button type="button" class="secondary" id="btn-geo">Use my location</button>' +
+      '</div>' +
+      '<div class="hint" id="geo-status"></div>' +
+      '<label for="fld-gst">GST number (optional)</label>' +
+      '<input type="text" id="fld-gst" maxlength="20"/>' +
+      '<label for="fld-desc">Tell customers about your store</label>' +
+      '<textarea id="fld-desc" maxlength="1000"></textarea>' +
+      '<label for="fld-image">Store / cart photo</label>' +
+      '<input type="file" id="fld-image" accept="image/png,image/jpeg,image/webp"/>' +
+      '<div class="file-row" id="file-row" style="display:none;"><img class="thumb" id="file-thumb"/><span class="hint" id="file-status"></span></div>' +
+      '<button class="primary" id="btn-apply">Submit Application</button>' +
+      '<div id="apply-msg"></div>';
+
+    let lat, lng, uploadedImageKey;
+
+    document.getElementById('btn-geo').addEventListener('click', function () {
+      const statusEl = document.getElementById('geo-status');
+      if (!navigator.geolocation) {
+        statusEl.textContent = 'Location isn\'t available in this browser.';
+        return;
+      }
+      statusEl.textContent = 'Getting your location…';
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+          statusEl.textContent = 'Location captured — still fill in the address fields above.';
+        },
+        function () {
+          statusEl.textContent = 'Could not get your location — you can skip this, the address fields are what matters.';
+        }
+      );
+    });
+
+    document.getElementById('fld-image').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      const fileRow = document.getElementById('file-row');
+      const statusEl = document.getElementById('file-status');
+      const thumb = document.getElementById('file-thumb');
+      uploadedImageKey = undefined;
+      if (!file) { fileRow.style.display = 'none'; return; }
+      fileRow.style.display = 'flex';
+      thumb.src = URL.createObjectURL(file);
+      statusEl.textContent = 'Uploading…';
+
+      const { API_BASE } = window.APP_CONFIG;
+      fetch(API_BASE + '/api/sellers/applications/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+            .then(function (putRes) {
+              if (!putRes.ok) throw new Error('upload failed');
+              uploadedImageKey = data.imageKey;
+              statusEl.textContent = 'Photo uploaded.';
+            });
+        })
+        .catch(function () {
+          statusEl.textContent = 'Could not upload that photo — you can still submit without it.';
+        });
+    });
+
+    const btn = document.getElementById('btn-apply');
+    const msgEl = document.getElementById('apply-msg');
+    btn.addEventListener('click', function () {
+      const storeName = document.getElementById('fld-store').value.trim();
+      const ownerFullName = document.getElementById('fld-owner').value.trim();
+      const email = document.getElementById('fld-email').value.trim();
+      const phone = document.getElementById('fld-phone').value.trim();
+      const addressLine1 = document.getElementById('fld-line1').value.trim();
+      const addressLine2 = document.getElementById('fld-line2').value.trim();
+      const city = document.getElementById('fld-city').value.trim();
+      const state = document.getElementById('fld-state').value.trim();
+      const pincode = document.getElementById('fld-pincode').value.trim();
+      const gstNumber = document.getElementById('fld-gst').value.trim();
+      const description = document.getElementById('fld-desc').value.trim();
+
+      if (storeName.length < 2 || ownerFullName.length < 2 || !email || !phone || !addressLine1 || !city || !state || !pincode) {
+        msgEl.innerHTML = '<div class="msg err">Please fill in store name, owner name, email, phone, and full address.</div>';
+        return;
+      }
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Submitting…</div>';
+
+      const { API_BASE } = window.APP_CONFIG;
+      fetch(API_BASE + '/api/sellers/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeName: storeName,
+          ownerFullName: ownerFullName,
+          email: email,
+          phone: phone,
+          addressLine1: addressLine1,
+          addressLine2: addressLine2 || undefined,
+          city: city,
+          state: state,
+          pincode: pincode,
+          lat: lat,
+          lng: lng,
+          gstNumber: gstNumber || undefined,
+          description: description,
+          storeImageKey: uploadedImageKey
+        })
+      })
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            btn.disabled = false;
+            msgEl.innerHTML = '<div class="msg err">' +
+              (res.body && res.body.error === 'already_applied' ? 'This email has already applied.' : 'Could not submit your application. Please try again.') +
+              '</div>';
+            return;
+          }
+          renderConfirmation(res.body.seller);
+        })
+        .catch(function () {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">Could not submit your application. Please try again.</div>';
+        });
+    });
+  }
+})();
+</script>
+</body>
+</html>
