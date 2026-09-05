@@ -45,10 +45,24 @@ export async function addItem(req: FastifyRequest, reply: FastifyReply) {
   if (!parsed.success) return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
   const { productId, variantId, quantity } = parsed.data;
 
-  const product = await supabaseJson<Array<{ id: number }>>(
-    `products?id=eq.${productId}&active=eq.true&select=id&limit=1`
+  const product = await supabaseJson<Array<{ id: number; seller_id: string }>>(
+    `products?id=eq.${productId}&active=eq.true&select=id,seller_id&limit=1`
   );
   if (!product[0]) return reply.code(404).send({ error: "product_not_found" });
+
+  const cart = await getOrCreateCart(req.customerId!);
+
+  // A cart may only ever hold one seller's products at a time — checkout
+  // ships as a single order to a single seller, unlike wishlist_items which
+  // deliberately allows mixing sellers. Reject the add rather than silently
+  // splitting or merging carts; the customer must check out or clear the
+  // cart before switching sellers.
+  const existingCartItems = await supabaseJson<Array<{ products: { seller_id: string } }>>(
+    `cart_items?cart_id=eq.${cart.id}&select=products(seller_id)&limit=1`
+  );
+  if (existingCartItems[0] && existingCartItems[0].products.seller_id !== product[0].seller_id) {
+    return reply.code(409).send({ error: "different_seller_in_cart" });
+  }
 
   if (variantId !== undefined) {
     const variant = await supabaseJson<Array<{ id: number; inventory_quantity: number }>>(
@@ -60,7 +74,6 @@ export async function addItem(req: FastifyRequest, reply: FastifyReply) {
     }
   }
 
-  const cart = await getOrCreateCart(req.customerId!);
   const variantFilter = variantId !== undefined ? `variant_id=eq.${variantId}` : "variant_id=is.null";
   const existing = await supabaseJson<CartItemRow[]>(
     `cart_items?cart_id=eq.${cart.id}&product_id=eq.${productId}&${variantFilter}&select=id,quantity&limit=1`

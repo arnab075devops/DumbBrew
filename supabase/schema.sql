@@ -667,3 +667,20 @@ create table if not exists tutorials (
 alter table tutorials enable row level security;
 drop policy if exists "tutorials public read" on tutorials;
 create policy "tutorials public read" on tutorials for select using (published);
+
+-- --- Wishlist ---
+-- Unlike cart_items, wishlist_items is deliberately NOT restricted to one
+-- seller — a customer can save products from any number of sellers here.
+-- The single-seller rule only applies to cart_items (enforced in
+-- cart.controller.ts's addItem), not to what a customer can save for later.
+create table if not exists wishlist_items (
+  id bigint generated always as identity primary key,
+  customer_id uuid not null references customers(id),
+  product_id bigint not null references products(id),
+  created_at timestamptz not null default now(),
+  unique (customer_id, product_id)
+);
+alter table wishlist_items enable row level security;
+drop policy if exists "wishlist_items own" on wishlist_items;
+create policy "wishlist_items own" on wishlist_items for all
+  using (auth.uid() = customer_id) with check (auth.uid() = customer_id);

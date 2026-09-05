@@ -4,6 +4,8 @@ import rateLimit from "@fastify/rate-limit";
 import client from "prom-client";
 import { config } from "./config.js";
 import { cartRoutes } from "./routes/cart.routes.js";
+import { wishlistRoutes } from "./routes/wishlist.routes.js";
+import { productsRoutes } from "./routes/products.routes.js";
 import { addressesRoutes } from "./routes/addresses.routes.js";
 import { ordersRoutes } from "./routes/orders.routes.js";
 import { paymentsRoutes } from "./routes/payments.routes.js";
@@ -75,6 +77,8 @@ app.get("/metrics", async (_req, reply) => {
 });
 
 await app.register(cartRoutes, { prefix: "/api/cart" });
+await app.register(wishlistRoutes, { prefix: "/api/wishlist" });
+await app.register(productsRoutes, { prefix: "/api/products" });
 await app.register(addressesRoutes, { prefix: "/api/addresses" });
 await app.register(ordersRoutes, { prefix: "/api/orders" });
 await app.register(paymentsRoutes, { prefix: "/api/payments" });
