@@ -644,3 +644,26 @@ create table if not exists seller_notices (
   acknowledged_at timestamptz
 );
 alter table seller_notices enable row level security;
+
+-- Admin-authored recipe/how-to articles (the site's "Tutorials" section).
+-- Written and published exclusively through order-service's
+-- /api/admin/tutorials routes (service-role key, gated by requireAdmin) —
+-- there is deliberately no insert/update/delete policy here, only public
+-- read of published rows, same model as visit_info's admin-only writes.
+create table if not exists tutorials (
+  id bigint generated always as identity primary key,
+  slug text not null unique,
+  title text not null,
+  excerpt text not null default '',
+  category text,
+  thumbnail_key text,
+  video_url text,
+  body_html text not null default '',
+  published boolean not null default false,
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table tutorials enable row level security;
+drop policy if exists "tutorials public read" on tutorials;
+create policy "tutorials public read" on tutorials for select using (published);

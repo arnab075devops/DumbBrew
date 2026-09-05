@@ -150,7 +150,8 @@ input[type="text"]:focus { border-color:#c99a54; }
         [['applications', 'Applications'], ['reports', 'Reports'], ['storefront', 'Storefront']].map(function (v) {
           return '<button type="button" class="view-tab' + (v[0] === currentView ? ' active' : '') + '" data-view="' + v[0] + '">' + v[1] + '</button>';
         }).join('') +
-        '<button class="link" id="btn-logout" style="margin-left:auto;">Sign Out</button>' +
+        '<a class="link" href="./admin-tutorials.html" style="margin-left:auto; text-decoration:none;">Tutorials</a>' +
+        '<button class="link" id="btn-logout">Sign Out</button>' +
       '</div>' +
       '<div id="view-body"></div>';
 

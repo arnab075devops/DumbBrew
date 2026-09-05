@@ -87,7 +87,7 @@ h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; marg
           '<div class="pname">' + escapeHtml(p.name) + '</div>' +
           '<div class="pdesc">' + escapeHtml(p.description || '') + '</div>' +
           '<div class="prow">' +
-            '<span class="pprice">$' + Number(p.price).toFixed(2) + '</span>' +
+            '<span class="pprice">' + window.formatINR(p.price) + '</span>' +
             '<button class="add-btn" data-id="' + p.id + '">Add to Cart</button>' +
           '</div>' +
         '</div>' +

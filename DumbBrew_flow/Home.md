@@ -2,7 +2,7 @@
 
 This vault is a **map of the DumbBrew repository**, kept separate from the code so Claude (or you) can answer most "where/how does X work" questions from here without re-reading the whole tree. It documents *structure and mechanism*, not day-to-day task status — for what's currently live/broken, see [[Current Status]].
 
-Repo root: `C:\Users\arnab\OneDrive\Desktop\DumbBrew`. This vault lives at `DumbBrew_flow/` inside it, gitignored-or-not doesn't matter — it's notes, not code.
+Repo root: `C:\Users\arnab\OneDrive\Desktop\DumbBrew`. This vault lives at `DumbBrew_flow/` inside it and **is committed to git**, which is pushed to the **public** repo `https://github.com/arnab075devops/DumbBrew` — so it does matter what's in here. The one exception is [[Credentials]] (`07 Project State/Credentials.md`), which holds live secrets and is explicitly `.gitignore`d; never move secret values into a tracked note.
 
 > [!warning] Keep this in sync
 > This vault was generated 2026-09-01 from a direct read of the source. It will drift as the code changes. When you (Claude) make a structural change — a new route, a new table, a new service — update the relevant note in the same session. Don't trust a stale endpoint list over `grep`; verify before relying on specifics for anything you're about to act on.
@@ -17,6 +17,7 @@ Repo root: `C:\Users\arnab\OneDrive\Desktop\DumbBrew`. This vault lives at `Dumb
 - **"What page has feature Z?"** → [[Frontend Pages]].
 - **"How do I run/deploy this?"** → [[Docker Compose]], [[Vercel Deploy]], [[Terraform OCI]].
 - **"What's actually live right now / what's half-built?"** → [[Current Status]] and [[Known Gaps]].
+- **"What are the actual passwords/keys/URLs?"** → [[Credentials]] (gitignored, not pushed to GitHub).
 
 ## The one-paragraph version
 
@@ -31,7 +32,7 @@ DumbBrew is a coffee-shop marketing site that grew a marketplace. The **live pro
 04 Data Model/       → Supabase Schema, Local Postgres Schema
 05 Frontend/         → Frontend Pages, config.js Reference
 06 Infra and Deploy/ → Docker Compose, Terraform OCI, Vercel Deploy, Monitoring
-07 Project State/    → Current Status, Known Gaps
+07 Project State/    → Current Status, Known Gaps, Credentials (gitignored)
 Glossary.md
 ```
 

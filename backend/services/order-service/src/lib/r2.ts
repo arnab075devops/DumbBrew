@@ -24,10 +24,11 @@ function safeFileName(name: string): string {
 export async function createUploadUrl(
   prefix: string,
   fileName: string,
-  contentType: string
+  contentType: string,
+  bucket: string = config.r2Bucket
 ): Promise<{ uploadUrl: string; imageKey: string }> {
   const imageKey = `${prefix}/${randomUUID()}-${safeFileName(fileName)}`;
-  const command = new PutObjectCommand({ Bucket: config.r2Bucket, Key: imageKey, ContentType: contentType });
+  const command = new PutObjectCommand({ Bucket: bucket, Key: imageKey, ContentType: contentType });
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
   return { uploadUrl, imageKey };
 }

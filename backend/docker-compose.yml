@@ -122,6 +122,10 @@ services:
       - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}
       - R2_BUCKET=${R2_BUCKET:?R2_BUCKET is required}
+      # Separate bucket with public r2.dev access enabled, used only for
+      # tutorial thumbnails/inline images (r2Bucket has no public read
+      # access, only signed GETs for seller-application photos).
+      - R2_TUTORIALS_BUCKET=${R2_TUTORIALS_BUCKET:?R2_TUTORIALS_BUCKET is required}
     # Doesn't touch the shared Postgres, so it doesn't need service-common's
     # postgres health-dependency — but *service-common still pulls one in;
     # override it to empty since this service would otherwise wait on a

@@ -44,5 +44,13 @@ export const config = {
   r2AccountId: required("R2_ACCOUNT_ID"),
   r2AccessKeyId: required("R2_ACCESS_KEY_ID"),
   r2SecretAccessKey: required("R2_SECRET_ACCESS_KEY"),
-  r2Bucket: required("R2_BUCKET")
+  r2Bucket: required("R2_BUCKET"),
+
+  // A separate bucket (with its own public r2.dev URL, see
+  // gateway/public/config.js's R2_TUTORIALS_BASE) rather than reusing
+  // r2Bucket — that bucket (R2_BUCKET) has no public read access, only
+  // signed GETs for seller-application photos, so tutorial images
+  // (meant to be publicly viewable once published) need a bucket that
+  // actually has public access turned on.
+  r2TutorialsBucket: required("R2_TUTORIALS_BUCKET")
 };

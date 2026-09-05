@@ -2,7 +2,7 @@
 
 # Known Gaps
 
-Parent: [[Home]] · See also: [[Current Status]]
+Parent: [[Home]] · See also: [[Current Status]], [[Credentials]]
 
 Technical-debt-shaped items, distinct from [[Current Status]]'s point-in-time snapshot — these are structural things to know about regardless of when you're reading this, until they're actually fixed.
 

@@ -71,7 +71,7 @@ button.primary:disabled { opacity:0.5; cursor:default; }
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function money(n) { return '$' + Number(n).toFixed(2); }
+  function money(n) { return window.formatINR(n); }
 
   Promise.all([
     window.orderApiRequest('/api/cart', { method: 'GET' }, accessToken),

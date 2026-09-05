@@ -291,7 +291,7 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
             '</div>' +
             '<div class="order-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</div>' +
             '<div class="order-items">' + itemsHtml + '</div>' +
-            '<div class="order-total">$' + Number(o.amount).toFixed(2) + '</div>' +
+            '<div class="order-total">' + window.formatINR(o.amount) + '</div>' +
           '</div>';
         }).join('');
 

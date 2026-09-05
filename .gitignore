@@ -13,6 +13,10 @@ terraform.tfvars
 *.pem
 *.key
 
+# Vault note holding live credentials — never push secrets to the public
+# GitHub remote. See DumbBrew_flow/07 Project State/Credentials.md.
+DumbBrew_flow/07 Project State/Credentials.md
+
 # Raw/unoptimized source images (100MB+) — not used by the site. The
 # web-ready compressed copies actually served live in
 # backend/gateway/public/assets/ and project/assets/ (both tracked).

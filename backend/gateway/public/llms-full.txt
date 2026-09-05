@@ -1,0 +1,81 @@
+# DumbBrew — Full Site Content
+
+> This is the full-content companion to llms.txt (https://dumbbrew.com/llms.txt), per the llms.txt convention (https://llmstxt.org/). It inlines each public page's actual content so an LLM doesn't need to fetch every page separately. Content shown here reflects the site's checked-in fallback defaults; live prices, menu items, brews, and tutorials are stored in Supabase and may differ — treat this file as a good-enough snapshot, not the live source of truth. All prices are in Indian Rupees (₹).
+
+## Home — https://dumbbrew.com/index.html
+
+DumbBrew's home page. Links out to every section below (Brews, Menu, Story, Gallery, Shop, Tutorials, Visit). Includes a seasonal/upcoming-events section and an email newsletter signup.
+
+## Brews — https://dumbbrew.com/brews.html
+
+The core brew lineup:
+
+- **The Regular** (Drip, ₹3.50) — Our house blend, drip-brewed and honest. No tasting notes, no ceremony — just coffee that gets the day open.
+- **Slow Cortado** (Espresso, ₹4.50) — Equal parts espresso and steamed milk, pulled to order and served in warm glass. Four sips of quiet.
+- **Overnight Cold Brew** (Cold Brew, ₹4.75) — Eighteen hours of patience in a steel tank. Round, low-acid, smooth enough to drink black.
+
+## Menu — https://dumbbrew.com/menu.html
+
+**Coffee**
+- Drip Coffee — House blend, roasted weekly — ₹3.50
+- Cortado — Equal parts espresso & steamed milk — ₹4.50
+- Oat Milk Latte — We won't judge, promise — ₹5.25
+- Cold Brew — 18-hour steep — ₹4.75
+
+**Bakery**
+- Butter Croissant — Baked before sunrise — ₹4.50
+- Sourdough Toast — Whipped ricotta & honey — ₹7.00
+- Morning Bun — Cinnamon, orange zest — ₹5.00
+- Everything Bagel — House cream cheese — ₹5.50
+
+## Brew Methods (Gallery) — https://dumbbrew.com/gallery.html
+
+"However you like it" — eight ways to brew the same bean:
+
+- **Pour Over** — A slow, hand-poured drip through a paper filter for a clean, bright cup that shows off a bean's character.
+- **Espresso** — Nine bars of pressure through finely-ground coffee in under 30 seconds. The base for everything else on the board.
+- **Chemex** — A thick filter and an hourglass carafe for a lighter, tea-like body.
+- **French Press** — Full immersion, no filter paper, more body and oils in the cup. Four minutes, then press.
+- **Aeropress** — Immersion plus pressure in one small plunger — fast, portable, forgiving of a rough grind.
+- **Moka Pot** — Stovetop pressure brewing, dense and syrupy — the closest thing to espresso without the machine.
+- **Turkish Coffee** — Finely ground coffee simmered directly in water, unfiltered, served with the grounds settled at the bottom.
+- **Siphon** — Vapor pressure pulls water up through the grounds and back down through a filter — theatrical, and genuinely cleaner-tasting.
+
+## Our Story — https://dumbbrew.com/story.html
+
+"We started with a bad pun and a good roaster." DumbBrew opened in 2019 because the neighborhood needed a place that took its coffee seriously and everything else a little less so. Every bean is roasted in small batches just down the street, and every loaf comes out of the oven before sunrise. "No corporate syrups. No ten-word drink names. Just good coffee and terrible dad jokes on the chalkboard."
+
+Milestones:
+- **2019 — Doors open**: A single espresso machine, a secondhand roaster, and a chalkboard full of bad puns.
+- **2021 — The oven arrives**: Bread and pastry moved in-house — croissants before sunrise, every day since.
+- **2023 — Roastery down the street**: Small-batch roasting moved two doors down so the beans never travel far.
+- **2026 — Still terrible at naming things**: Menu's bigger, jokes are worse, coffee's better.
+
+## Shop — https://dumbbrew.com/shop.html
+
+The commerce storefront: DumbBrew's own catalog plus every onboarded local seller's products, in one grid. Add to cart, then checkout via https://dumbbrew.com/cart.html (Razorpay, INR). Sellers are a standalone identity (not customer accounts) — see "Partner With Us" below for how a seller gets listed here.
+
+## Tutorials — https://dumbbrew.com/tutorials.html
+
+Admin-written recipe and brewing how-to articles — a Medium-style article per tutorial, each with a title, category, excerpt, optional embedded video (YouTube/Vimeo, or a direct video file), and a rich-text body with inline images. Individual articles are served at `https://dumbbrew.com/tutorial.html?slug=<slug>`. This list is dynamic (stored in Supabase's `tutorials` table, public read of published rows only) — fetch `/tutorials.html` directly or query Supabase for the current set rather than relying on a fixed list here.
+
+## Partner With Us / Become a Seller — https://dumbbrew.com/seller-apply.html
+
+Public application form — no DumbBrew account needed. An admin reviews the application; on approval, a seller account (standalone login, separate from customer accounts) is generated and the seller can manage their own catalog and orders from a seller dashboard.
+
+## Visit — https://dumbbrew.com/visit.html
+
+- **Address**: 3rd–5th floor, Huda City Centre Metro Station, Gurugram, Haryana 122009 (above the HUDA City Centre metro station concourse)
+- **Hours**: Mon–Fri 7:00am–4:00pm · Sat–Sun 8:00am–3:00pm
+- **Phone**: (503) 555-0142
+- **Email**: hello@dumbbrew.example
+
+## Accounts
+
+- [Create an Account](https://dumbbrew.com/register.html) — Customer registration (order history, saved addresses).
+- [Sign In](https://dumbbrew.com/login.html) — Customer sign-in.
+
+## Legal
+
+- [Terms](https://dumbbrew.com/terms.html) — Terms of service.
+- [Data & Privacy Policy](https://dumbbrew.com/data-policy.html) — DPDP Act 2023-aware privacy/data-storage policy (not lawyer-reviewed as of this writing — treat as a solid draft, not a final legal document).

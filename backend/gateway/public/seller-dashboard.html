@@ -313,7 +313,7 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       '<label for="pf-name">Name</label><input type="text" id="pf-name" value="' + escapeHtml(existing ? existing.name : '') + '"/>' +
       '<label for="pf-desc">Description</label><textarea id="pf-desc">' + escapeHtml(existing ? existing.description : '') + '</textarea>' +
       '<div class="two-col">' +
-        '<div><label for="pf-price">Base price ($)</label><input type="number" step="0.01" id="pf-price" value="' + (existing ? existing.price : '') + '"/><div class="sub">Used when there are no variants below.</div></div>' +
+        '<div><label for="pf-price">Base price (₹)</label><input type="number" step="0.01" id="pf-price" value="' + (existing ? existing.price : '') + '"/><div class="sub">Used when there are no variants below.</div></div>' +
         '<div><label for="pf-category">Category</label><input type="text" id="pf-category" value="' + escapeHtml(existing ? (existing.category || '') : '') + '"/></div>' +
       '</div>' +
       '<label>Variants (optional — leave empty for a simple single-price product)</label>' +

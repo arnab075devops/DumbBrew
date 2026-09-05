@@ -2,9 +2,32 @@
 
 # Current Status
 
-Parent: [[Home]] · Primary source of truth: **`CONTEXT.md` at repo root — read that file directly for the latest snapshot, this note summarizes it as of 2026-09-01 and will go stale faster than the code does.**
+Parent: [[Home]] · Primary source of truth: **`CONTEXT.md` at repo root — read that file directly for the latest snapshot.** As of this update (2026-09-05, commit `98fc84b`), `CONTEXT.md` itself is stale — it still describes commit `349810a` ("Add customer accounts with Authentik SSO") and predates the marketplace/seller/Razorpay work below. Don't treat `CONTEXT.md` as more current than this note until someone refreshes it.
 
-This note exists so Claude doesn't have to re-read all of `CONTEXT.md` just to get oriented, but for anything you're about to *act* on, re-check `CONTEXT.md` and the relevant code — this is a summary of a point-in-time snapshot, not a live status feed.
+This note exists so Claude doesn't have to re-read all of `CONTEXT.md` just to get oriented, but for anything you're about to *act* on, re-check the relevant code — this is a summary of a point-in-time snapshot, not a live status feed. See [[Credentials]] for actual secret values and reachable URLs.
+
+## Since the last `CONTEXT.md` snapshot (commits `223e893` → `98fc84b`)
+
+- **Sellers are now a standalone identity** (not customer accounts): public
+  application flow (`seller-apply.html` → `sellerApplications.controller.ts`),
+  admin review/approval with a one-time generated password
+  (`admin-sellers.html` → `adminSellers.controller.ts`), seller login/reset
+  (`sellerAuth.controller.ts`), and a Shopify-style seller dashboard
+  (`seller-dashboard.html`) for managing their own catalog. See [[Credentials]]
+  for why there's no fixed seller demo login to record.
+- **Razorpay integration** landed in `order-service` for checkout/payments
+  (test-mode keys, see [[Credentials]]).
+- **Latest commit (`98fc84b`, "Some kind of major changes")** added admin
+  reports (`adminReports.controller.ts`/`reports.routes.ts`), an admin visit
+  endpoint (`adminVisit.controller.ts`), product reviews
+  (`reviews.controller.ts`/`reviews.routes.ts`), expanded `admin-sellers.html`
+  and `seller-dashboard.html` significantly, touched `nginx.conf`, and added
+  91 lines to `supabase/schema.sql` — the [[Supabase Schema]] and
+  [[API Endpoint Map]] notes have not been re-verified against these yet;
+  treat their route/table lists as pre-marketplace-expansion until someone
+  re-reads the new controllers/schema.
+- **Grafana** is on `http://localhost:3000` (bound to `127.0.0.1:3000` in
+  `docker-compose.yml`), not `3001` as this note previously said.
 
 ## What's live and verified (as of the last CONTEXT.md update)
 
@@ -28,4 +51,4 @@ This note exists so Claude doesn't have to re-read all of `CONTEXT.md` just to g
 
 `terms.html`/`data-policy.html` are a solid DPDP Act 2023-aware draft, **not lawyer-reviewed** — say so if the user asks about shipping this for real, especially the Grievance Officer / hosting-region placeholders still in `data-policy.html`.
 
-See [[Known Gaps]] for the technical-debt-shaped items (session refresh, CI/CD gap, `creds.txt` gitignore status) rather than status snapshot items.
+See [[Known Gaps]] for the technical-debt-shaped items (session refresh, CI/CD gap, `creds.txt` gitignore status) rather than status snapshot items, and [[Credentials]] for every actual secret/URL currently in use.

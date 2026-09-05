@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "89a8139add8eb3f3",
+        "id": "d535281c5498f6dc",
         "type": "tabs",
         "children": [
           {
-            "id": "be9f4717a01b4041",
+            "id": "3ac58c850d3f5734",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "04 Data Model/Supabase Schema.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Supabase Schema"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -185,32 +181,34 @@
       "bases:Create new base": false
     }
   },
-  "active": "be9f4717a01b4041",
+  "active": "3ac58c850d3f5734",
   "lastOpenFiles": [
+    "07 Project State/Known Gaps.md",
+    "Untitled.base",
+    "2026-09-06.md",
+    "Home.md",
+    "07 Project State/Current Status.md",
+    "07 Project State/Credentials.md",
+    "07 Project State/Known Gaps.md.tmp.18212.b8798804ba2e",
+    "07 Project State/Current Status.md.tmp.18212.bb664c1749ff",
+    "Glossary.md",
+    "Home.md.tmp.18212.775e5b363b3e",
+    "Home.md.tmp.18212.2dfe904df7e3",
+    "04 Data Model/Supabase Schema.md",
     "04 Data Model/Local Postgres Schema.md",
     "01 Architecture/Repo Map.md",
-    "Home.md",
     "02 Services/gateway.md",
-    "04 Data Model/Supabase Schema.md",
     "06 Infra and Deploy/Docker Compose.md",
-    "07 Project State/Current Status.md",
-    "Glossary.md",
     "01 Architecture/Auth Identity Systems.md",
     "05 Frontend/config.js Reference.md",
     "07 Project State/Current Status.md.tmp.9500.ec6336d67bd2",
     "01 Architecture/Repo Map.md.tmp.9500.62be24fdaf54",
     "Glossary.md.tmp.9500.e0ab3dd98ff5",
     "05 Frontend/Frontend Pages.md.tmp.9500.c8215ccd2c97",
-    "07 Project State/Known Gaps.md",
     "07 Project State/Known Gaps.md.tmp.9500.dd453ee6f031",
-    "07 Project State/Current Status.md.tmp.9500.75996945bf3a",
     "06 Infra and Deploy/Monitoring.md",
-    "06 Infra and Deploy/Monitoring.md.tmp.9500.770393302d68",
     "06 Infra and Deploy/Vercel Deploy.md",
-    "06 Infra and Deploy/Vercel Deploy.md.tmp.9500.6795a1238183",
     "06 Infra and Deploy/Terraform OCI.md",
-    "06 Infra and Deploy/Terraform OCI.md.tmp.9500.49237a6a058c",
-    "06 Infra and Deploy/Docker Compose.md.tmp.9500.ad95a122098b",
     "05 Frontend/Frontend Pages.md",
     "02 Services/order-service.md",
     "02 Services/content-service.md",

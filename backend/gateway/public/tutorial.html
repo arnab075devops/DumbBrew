@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brew Methods – DumbBrew</title>
+<title>Tutorial – DumbBrew</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -26,6 +26,13 @@ a:hover { color: #7d8a4c; }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] { opacity: 1 !important; transform: none !important; }
 }
+.tutorial-body h1, .tutorial-body h2, .tutorial-body h3 { font-family:'Playfair Display',serif; color:#17100a; }
+.tutorial-body p { line-height:1.9; color:#3b2414; font-size:16px; margin:0 0 20px; }
+.tutorial-body img { max-width:100%; border-radius:10px; display:block; margin:28px auto; }
+.tutorial-body iframe { max-width:100%; border-radius:10px; display:block; margin:28px auto; border:none; }
+.tutorial-body blockquote { margin:28px 0; padding:4px 24px; border-left:3px solid #8a5527; color:#5a4128; font-style:italic; }
+.tutorial-body ul, .tutorial-body ol { margin:0 0 20px; padding-left:26px; color:#3b2414; line-height:1.8; }
+.tutorial-body a { color:#8a5527; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -43,9 +50,9 @@ a:hover { color: #7d8a4c; }
       <a href="./brews.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Brews</a>
       <a href="./menu.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Menu</a>
       <a href="./story.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Story</a>
-      <a href="./gallery.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#8a5527;">Gallery</a>
+      <a href="./gallery.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Gallery</a>
       <a href="./shop.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Shop</a>
-      <a href="./tutorials.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Tutorials</a>
+      <a href="./tutorials.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#8a5527;">Tutorials</a>
       <a href="./visit.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Visit</a>
       <a href="./login.html" aria-label="Account" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none;" style-hover="color:#8a5527; border-color:#8a552766;">
         <span style="position:relative; width:15px; height:15px; display:block;">
@@ -64,35 +71,52 @@ a:hover { color: #7d8a4c; }
     </div>
   </div>
 
-  <!-- PAGE HERO -->
-  <div style="background:#e7dac2; padding:140px 72px 100px;">
-    <div data-reveal="true" style="max-width:820px; margin:0 auto; text-align:center;">
-      <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:26px;">
-        <div style="width:44px; height:1px; background:#8a5527;"></div>
-        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#7d8a4c; font-weight:500;">Methods</div>
-        <div style="width:44px; height:1px; background:#8a5527;"></div>
-      </div>
-      <h1 style="font-family:'Playfair Display',serif; font-size:clamp(38px,5vw,60px); font-weight:900; margin:0 0 22px; color:#17100a; letter-spacing:-1px;">However you like it</h1>
-      <p style="font-size:17px; line-height:1.8; color:#5a4128; font-weight:300; max-width:600px; margin:0 auto;">Eight ways to get the same bean to taste completely different. Ask the bar to walk you through any of them — they love an excuse.</p>
+  <sc-if value="{{ notFound }}">
+    <div style="max-width:600px; margin:0 auto; padding:160px 24px; text-align:center;">
+      <h1 style="font-family:'Playfair Display',serif; font-size:30px; color:#17100a;">Tutorial not found</h1>
+      <p style="color:#5a4128;">It may have been unpublished or the link is wrong.</p>
+      <a href="./tutorials.html" style="color:#8a5527;">&larr; Back to Tutorials</a>
     </div>
-  </div>
+  </sc-if>
 
-  <!-- METHODS GRID -->
-  <div style="max-width:1180px; margin:0 auto; padding:120px 72px;">
-    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:44px;">
-      <sc-for list="{{ methods }}" as="m" hint-placeholder-count="8">
-        <div data-reveal="true" style="background:#faf5ea; border-radius:14px; overflow:hidden; display:flex; box-shadow:0 2px 8px #24191008;">
-          <div style="width:42%; flex:none; aspect-ratio:4/5; overflow:hidden; background:#3b2414;">
-            <img src="{{ m.img }}" alt="{{ m.label }}" style="width:100%; height:100%; object-fit:cover; display:block;"/>
-          </div>
-          <div style="padding:32px 28px;">
-            <div style="font-family:'Playfair Display',serif; font-size:23px; font-weight:700; color:#17100a; margin-bottom:12px;">{{ m.label }}</div>
-            <div style="font-size:14px; line-height:1.75; color:#5a4128; font-weight:300;">{{ m.description }}</div>
-          </div>
+  <sc-if value="{{ hasTutorial }}">
+  <div>
+    <!-- HERO -->
+    <div style="background:#e7dac2; padding:140px 72px 60px;">
+      <div data-reveal="true" style="max-width:760px; margin:0 auto; text-align:center;">
+        <sc-if value="{{ category }}">
+          <div style="font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#7d8a4c; font-weight:600; margin-bottom:18px;">{{ category }}</div>
+        </sc-if>
+        <h1 style="font-family:'Playfair Display',serif; font-size:clamp(32px,4.5vw,50px); font-weight:900; margin:0 0 18px; color:#17100a; letter-spacing:-0.5px;">{{ title }}</h1>
+        <p style="font-size:16px; line-height:1.8; color:#5a4128; font-weight:300;">{{ excerpt }}</p>
+      </div>
+    </div>
+
+    <!-- ARTICLE -->
+    <div style="max-width:760px; margin:0 auto; padding:60px 32px 140px;">
+      <sc-if value="{{ videoEmbedType }}">
+        <div data-reveal="true" style="margin-bottom:40px; border-radius:12px; overflow:hidden; background:#000;">
+          <sc-if value="{{ isIframeVideo }}">
+            <div style="position:relative; padding-top:56.25%;">
+              <iframe src="{{ videoEmbedUrl }}" title="{{ title }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"></iframe>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isFileVideo }}">
+            <video controls="true" src="{{ videoEmbedUrl }}" style="width:100%; display:block;"></video>
+          </sc-if>
         </div>
-      </sc-for>
+      </sc-if>
+      <sc-if value="{{ showThumbnail }}">
+        <img src="{{ thumb }}" alt="{{ title }}" data-reveal="true" style="width:100%; border-radius:12px; margin-bottom:40px; display:block; object-fit:cover;"/>
+      </sc-if>
+      <sc-if value="{{ rawVideoLink }}">
+        <p data-reveal="true" style="margin-bottom:32px;"><a href="{{ rawVideoLink }}" target="_blank" rel="noopener">Watch the video &rarr;</a></p>
+      </sc-if>
+
+      <div class="tutorial-body" ref="{{ bodyRef }}" data-reveal="true"></div>
     </div>
   </div>
+  </sc-if>
 
   <!-- FOOTER -->
   <div style="background:#17100a; color:#f0e5d1; padding:64px 72px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px;">
@@ -112,56 +136,62 @@ a:hover { color: #7d8a4c; }
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
-const DEFAULT_METHODS = [
-  { label: 'Pour Over', description: "A slow, hand-poured drip through a paper filter for a clean, bright cup that shows off a bean's character.", img: window.assetUrl('method-pour-over.jpg') },
-  { label: 'Espresso', description: 'Nine bars of pressure through finely-ground coffee in under 30 seconds. The base for everything else on the board.', img: window.assetUrl('method-espresso.jpg') },
-  { label: 'Chemex', description: "A thick filter and an hourglass carafe for a lighter, tea-like body — great for beans we want to taste unfiltered by milk.", img: window.assetUrl('method-chemex.jpg') },
-  { label: 'French Press', description: 'Full immersion, no filter paper, more body and oils in the cup. Four minutes, then press.', img: window.assetUrl('method-french-press.jpg') },
-  { label: 'Aeropress', description: 'Immersion plus pressure in one small plunger — fast, portable, and forgiving of a rough grind.', img: window.assetUrl('method-aeropress.jpg') },
-  { label: 'Moka Pot', description: 'Stovetop pressure brewing, dense and syrupy — the closest thing to espresso without the machine.', img: window.assetUrl('method-moka-pot.jpg') },
-  { label: 'Turkish Coffee', description: 'Finely ground coffee simmered directly in water, unfiltered, served with the grounds settled at the bottom.', img: window.assetUrl('method-turkish.jpg') },
-  { label: 'Siphon', description: 'Vapor pressure pulls water up through the grounds and back down through a filter — theatrical, and genuinely cleaner-tasting.', img: window.assetUrl('method-simphon.jpg') },
-];
+// Resolves a raw video URL (as pasted by an admin) into something playable
+// in place. Returns null if nothing recognizable, in which case the caller
+// falls back to a plain "watch it elsewhere" link rather than assuming it's
+// embeddable.
+function resolveVideoEmbed(rawUrl) {
+  if (!rawUrl) return null;
+  const yt = rawUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{6,})/);
+  if (yt) return { kind: 'iframe', embedUrl: 'https://www.youtube-nocookie.com/embed/' + yt[1] };
+  const vimeo = rawUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeo) return { kind: 'iframe', embedUrl: 'https://player.vimeo.com/video/' + vimeo[1] };
+  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(rawUrl)) return { kind: 'file', embedUrl: rawUrl };
+  return null;
+}
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { methods: DEFAULT_METHODS };
+    this.state = { tutorial: null, notFound: false };
   }
   componentDidMount() {
     this.reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.hasGsap = !!(window.gsap && window.ScrollTrigger);
     if (this.hasGsap) window.gsap.registerPlugin(window.ScrollTrigger);
-    this.attachReveal();
     this.attachNavScroll();
-    this.loadMethods();
+    this.loadTutorial();
   }
-  componentDidUpdate() { this.attachReveal(); }
-  loadMethods() {
-    window.supabaseSelect('brew_methods', 'select=label,description,image_key&order=sort.asc')
+  componentDidUpdate() {
+    this.attachReveal();
+    if (this.bodyNode && this.state.tutorial && this.bodyNode.innerHTML !== this.state.tutorial.body_html) {
+      this.bodyNode.innerHTML = this.state.tutorial.body_html || '';
+    }
+  }
+  loadTutorial() {
+    const slug = new URLSearchParams(window.location.search).get('slug') || '';
+    if (!slug) { this.setState({ notFound: true }); return; }
+    window.supabaseSelect('tutorials', 'select=*&slug=eq.' + encodeURIComponent(slug) + '&published=eq.true&limit=1')
       .then((rows) => {
-        if (Array.isArray(rows) && rows.length) {
-          this.setState({ methods: rows.map((m) => ({ label: m.label, description: m.description, img: window.assetUrl(m.image_key) })) });
-        }
+        if (Array.isArray(rows) && rows[0]) this.setState({ tutorial: rows[0] });
+        else this.setState({ notFound: true });
       })
-      .catch((err) => console.warn('[dumbbrew] could not load brew methods from Supabase, showing defaults:', err));
+      .catch((err) => {
+        console.warn('[dumbbrew] could not load tutorial from Supabase:', err);
+        this.setState({ notFound: true });
+      });
   }
   attachReveal() {
     const root = this.rootNode || document;
     const els = Array.from(root.querySelectorAll('[data-reveal]')).filter(el => !el.dataset.revealBound);
-    if (!els.length) { requestAnimationFrame(() => { if (!this._retried) { this._retried = true; this.attachReveal(); } }); return; }
+    if (!els.length) return;
     els.forEach((el) => { el.dataset.revealBound = '1'; });
     if (this.reduceMotion || !this.hasGsap) {
       els.forEach((el) => { el.style.opacity = '1'; el.style.transform = 'none'; });
       return;
     }
-    const gsap = window.gsap, ScrollTrigger = window.ScrollTrigger;
-    this._triggers = this._triggers || [];
-    ScrollTrigger.batch(els, {
-      start: 'top 88%',
-      once: true,
-      onEnter: (batch) => { gsap.to(batch, { opacity: 1, y: 0, duration: 1, ease: 'power4.out', stagger: 0.08, overwrite: 'auto' }); }
-    }).forEach((st) => this._triggers.push(st));
+    const gsap = window.gsap;
+    gsap.to(els, { opacity: 1, y: 0, duration: 1, ease: 'power4.out', stagger: 0.08, overwrite: 'auto' });
   }
   attachNavScroll() {
     if (!this.hasGsap) return;
@@ -182,10 +212,24 @@ class Component extends DCLogic {
     if (this._triggers) this._triggers.forEach((st) => st && st.kill && st.kill());
   }
   renderVals() {
+    const t = this.state.tutorial;
+    const embed = t ? resolveVideoEmbed(t.video_url) : null;
     return {
       rootRef: (el) => { this.rootNode = el; },
+      bodyRef: (el) => { this.bodyNode = el; },
       logoUrl: window.assetUrl('db-logo.png'),
-      methods: this.state.methods,
+      notFound: this.state.notFound,
+      hasTutorial: !!t,
+      title: t ? t.title : '',
+      excerpt: t ? t.excerpt : '',
+      category: t ? (t.category || '') : '',
+      thumb: t && t.thumbnail_key ? window.tutorialAssetUrl(t.thumbnail_key) : '',
+      showThumbnail: !!(t && t.thumbnail_key && !embed),
+      videoEmbedType: embed ? embed.kind : '',
+      videoEmbedUrl: embed ? embed.embedUrl : '',
+      isIframeVideo: !!embed && embed.kind === 'iframe',
+      isFileVideo: !!embed && embed.kind === 'file',
+      rawVideoLink: t && t.video_url && !embed ? t.video_url : '',
     };
   }
 }

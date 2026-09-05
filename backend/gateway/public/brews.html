@@ -47,6 +47,7 @@ a:hover { color: #7d8a4c; }
       <a href="./story.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Story</a>
       <a href="./gallery.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Gallery</a>
       <a href="./shop.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Shop</a>
+      <a href="./tutorials.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Tutorials</a>
       <a href="./visit.html" style="text-decoration:none; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease;" style-hover="color:#8a5527;">Visit</a>
       <a href="./login.html" aria-label="Account" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none;" style-hover="color:#8a5527; border-color:#8a552766;">
         <span style="position:relative; width:15px; height:15px; display:block;">
@@ -92,7 +93,7 @@ a:hover { color: #7d8a4c; }
                 <span style="font-family:'Playfair Display',serif; font-size:14px; color:#c99a54; font-weight:700; letter-spacing:1px;">{{ brew.num }}</span>
                 <span style="font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:#17100a;">{{ brew.name }}</span>
               </div>
-              <span style="font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:#8a5527; white-space:nowrap;">${{ brew.price }}</span>
+              <span style="font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:#8a5527; white-space:nowrap;">₹{{ brew.price }}</span>
             </div>
             <sc-if value="{{ brew.method }}">
               <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#7d8a4c; font-weight:600; margin-bottom:12px;">{{ brew.method }}</div>
@@ -147,7 +148,7 @@ class Component extends DCLogic {
       .then((rows) => {
         if (Array.isArray(rows) && rows.length) {
           this.setState({
-            brews: rows.map((b) => ({ num: b.num, name: b.name, desc: b.description, price: Number(b.price).toFixed(2), method: b.method, img: window.assetUrl(b.image_key) }))
+            brews: rows.map((b) => ({ num: b.num, name: b.name, desc: b.description, price: window.formatINRNumber(b.price), method: b.method, img: window.assetUrl(b.image_key) }))
           });
         }
       })

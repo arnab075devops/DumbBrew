@@ -1,0 +1,29 @@
+# DumbBrew
+
+> DumbBrew is an independent coffee shop and bakery (opened 2019) with a small marketplace of local sellers. This file follows the llms.txt convention (https://llmstxt.org/) to help LLMs and AI agents quickly find the right page instead of crawling the whole site.
+
+DumbBrew roasts its own beans in small batches a few doors down from the shop, bakes bread and pastry in-house before sunrise, and — since 2026 — hosts a small marketplace of other local sellers alongside its own menu. All prices on the site are in Indian Rupees (₹). See [llms-full.txt](https://dumbbrew.com/llms-full.txt) for the same site with full page content inlined, rather than just links.
+
+## Menu & Brews
+
+- [Brews](https://dumbbrew.com/brews.html): The core drip/espresso/cold-brew lineup, with prices and brew method for each.
+- [Menu](https://dumbbrew.com/menu.html): Full drinks + bakery menu, grouped by category.
+- [Brew Methods](https://dumbbrew.com/gallery.html): How each brewing method (pour over, espresso, Chemex, French press, Aeropress, Moka pot, Turkish, siphon) works and how it changes the cup.
+
+## Shop & Tutorials
+
+- [Shop](https://dumbbrew.com/shop.html): The storefront for DumbBrew's own products plus everything onboarded local sellers have listed — add to cart and checkout (Razorpay, INR).
+- [Tutorials](https://dumbbrew.com/tutorials.html): Admin-written recipe and brewing how-to articles, each with a written guide and often an embedded video. Individual articles live at `/tutorial.html?slug=<slug>` and are not enumerable here since they're stored in a database, not static files — fetch `/tutorials.html` or query Supabase's `tutorials` table (RLS: public read of published rows only) for the current list.
+- [Partner With Us / Become a Seller](https://dumbbrew.com/seller-apply.html): Public application form for a local seller to list products on DumbBrew's marketplace.
+
+## About & Visit
+
+- [Our Story](https://dumbbrew.com/story.html): Founding story (2019) and milestones.
+- [Visit](https://dumbbrew.com/visit.html): Address, hours, phone, and a map.
+- [Home](https://dumbbrew.com/index.html): Overview, seasonal highlights, upcoming events, newsletter signup.
+
+## Optional
+
+- [Terms](https://dumbbrew.com/terms.html): Terms of service.
+- [Data & Privacy Policy](https://dumbbrew.com/data-policy.html): DPDP Act 2023-aware privacy/data-storage policy.
+- [Create an Account](https://dumbbrew.com/register.html) / [Sign In](https://dumbbrew.com/login.html): Customer accounts (order history, saved addresses).

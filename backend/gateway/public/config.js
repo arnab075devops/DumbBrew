@@ -12,6 +12,12 @@ window.APP_CONFIG = {
   // fall back to the images already checked into ./assets/.
   R2_BASE: 'https://pub-acdd02b3e347450b80d14a3676db872e.r2.dev',
 
+  // A *different* R2 bucket's public URL, used only for tutorial thumbnails
+  // and inline article images (order-service's presign-upload writes there,
+  // see backend/services/order-service/src/config.ts's r2TutorialsBucket) —
+  // R2_BASE's bucket has no public write path from that flow.
+  R2_TUTORIALS_BASE: 'https://pub-38b26ad2503b486fb27736dcbed36cf9.r2.dev',
+
   // The gateway (nginx + auth-service/content-service, see
   // backend/README.md). Only customer registration (register.html, via
   // /api/customers/register) depends on this now — everything else the
@@ -35,10 +41,30 @@ window.APP_CONFIG = {
   TERMS_VERSION: '2026-08-30',
 };
 
+// Every price/amount in the DB is a plain rupee-decimal numeric (no currency
+// conversion happens here) — these just format for display. formatINRNumber
+// gives Indian-locale comma grouping without the symbol (for templates that
+// already have a literal ₹ in the markup); formatINR includes the symbol.
+window.formatINRNumber = function formatINRNumber(n) {
+  return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+window.formatINR = function formatINR(n) {
+  return '₹' + window.formatINRNumber(n);
+};
+
 // R2_BASE + '/name.jpg' when set, else the checked-in local copy.
 window.assetUrl = function assetUrl(name) {
   const base = window.APP_CONFIG.R2_BASE;
   return base ? base.replace(/\/$/, '') + '/' + name : './assets/' + name;
+};
+
+// Same idea as assetUrl, but for tutorial images — those live in the
+// separate R2_TUTORIALS_BASE bucket, not R2_BASE. No local fallback:
+// tutorial images only ever come from an admin's upload, never a
+// checked-in default.
+window.tutorialAssetUrl = function tutorialAssetUrl(imageKey) {
+  const base = window.APP_CONFIG.R2_TUTORIALS_BASE;
+  return base ? base.replace(/\/$/, '') + '/' + imageKey : '';
 };
 
 // Thin wrapper over Supabase's PostgREST API (no @supabase/supabase-js
