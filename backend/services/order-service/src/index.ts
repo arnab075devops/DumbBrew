@@ -10,6 +10,10 @@ import { paymentsRoutes } from "./routes/payments.routes.js";
 import { sellersRoutes } from "./routes/sellers.routes.js";
 import { sellerPublicRoutes } from "./routes/sellerPublic.routes.js";
 import { adminSellersRoutes } from "./routes/adminSellers.routes.js";
+import { reviewsRoutes } from "./routes/reviews.routes.js";
+import { reportsRoutes } from "./routes/reports.routes.js";
+import { adminReportsRoutes } from "./routes/adminReports.routes.js";
+import { adminVisitRoutes } from "./routes/adminVisit.routes.js";
 import { webhook } from "./controllers/payments.controller.js";
 
 const app = Fastify({
@@ -76,6 +80,10 @@ await app.register(paymentsRoutes, { prefix: "/api/payments" });
 await app.register(sellersRoutes, { prefix: "/api/sellers" });
 await app.register(sellerPublicRoutes, { prefix: "/api/sellers" });
 await app.register(adminSellersRoutes, { prefix: "/api/admin/sellers" });
+await app.register(reviewsRoutes, { prefix: "/api/reviews" });
+await app.register(reportsRoutes, { prefix: "/api/reports" });
+await app.register(adminReportsRoutes, { prefix: "/api/admin/reports" });
+await app.register(adminVisitRoutes, { prefix: "/api/admin/visit-info" });
 // Registered directly (not via paymentsRoutes) so it never picks up a
 // requireCustomer hook — Razorpay's server calls this, not a signed-in
 // browser. A generous, separate rate-limit config since it's legitimate

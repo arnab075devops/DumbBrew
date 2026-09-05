@@ -7,9 +7,11 @@
 <script src="./config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
-.wrap { max-width:680px; margin:0 auto; padding:100px 24px 120px; }
+.wrap { max-width:760px; margin:0 auto; padding:100px 24px 120px; }
 .card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
 h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; margin:0 0 4px; color:#17100a; }
 .sub { font-size:13px; color:#5a412899; }
@@ -23,7 +25,7 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
 .tabs { display:flex; gap:10px; margin-bottom:20px; }
 .tab { padding:8px 16px; border-radius:14px; border:1px solid #3b241422; background:#fff; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; color:#5a4128; }
 .tab.active { background:#17100a; color:#f0e5d1; border-color:#17100a; }
-.seller-row { padding:16px 0; border-top:1px solid #3b241418; display:flex; gap:16px; }
+.seller-row { padding:20px 0; border-top:1px solid #3b241418; display:flex; gap:16px; }
 .seller-row:first-child { border-top:none; }
 .seller-thumb { width:64px; height:64px; border-radius:8px; object-fit:cover; background:#3b241411; flex-shrink:0; }
 .seller-body { flex:1; min-width:0; }
@@ -33,15 +35,46 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
 .seller-desc { font-size:13px; color:#5a4128; margin-bottom:10px; }
 .seller-meta { font-size:12px; color:#5a4128cc; line-height:1.8; margin-bottom:10px; }
 .seller-meta div { }
-.actions { display:flex; gap:10px; }
+.gallery { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.gallery a { display:block; }
+.gallery img { width:72px; height:72px; border-radius:8px; object-fit:cover; background:#3b241411; }
+.gallery .none { font-size:12px; color:#5a412899; font-style:italic; }
+.checklist { background:#3b241408; border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+.checklist-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:8px; }
+.checklist-item { display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 0; cursor:pointer; user-select:none; }
+.checklist-item input { width:15px; height:15px; cursor:pointer; }
+.checklist-item.checked { color:#4a5a2e; font-weight:500; }
+.actions { display:flex; gap:10px; align-items:center; }
 .actions button { padding:8px 16px; border-radius:1px; border:none; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
 .actions .approve { background:#7d8a4c; color:#fff; }
+.actions .approve:disabled { background:#7d8a4c55; color:#ffffffaa; cursor:not-allowed; }
 .actions .reject { background:transparent; color:#a13a2e; border:1px solid #a13a2e55; }
+.actions .approve-hint { font-size:11px; color:#5a412899; }
 .msg { font-size:13px; margin-top:14px; }
 .msg.err { color:#a13a2e; }
 .credential-box { background:#17100a; color:#f0e5d1; border-radius:10px; padding:16px 18px; margin-bottom:20px; font-size:13px; line-height:1.9; }
 .credential-box b { font-family:monospace; font-size:14px; }
 .credential-box .close { float:right; background:none; border:none; color:#f0e5d1aa; cursor:pointer; font-size:12px; }
+.view-tabs { display:flex; gap:10px; margin-bottom:20px; }
+.view-tab { padding:10px 20px; border-radius:1px; border:1px solid #17100a; background:#fff; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; color:#17100a; }
+.view-tab.active { background:#17100a; color:#f0e5d1; }
+.report-row { padding:20px 0; border-top:1px solid #3b241418; }
+.report-row:first-child { border-top:none; }
+.report-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.report-seller { font-weight:600; font-size:15px; }
+.report-date { font-size:12px; color:#5a412899; }
+.report-meta { font-size:12px; color:#5a4128cc; line-height:1.7; margin-bottom:8px; }
+.report-reason { font-size:13px; background:#3b241408; border-radius:8px; padding:10px 12px; margin-bottom:12px; }
+.notice-form textarea { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; font-size:13px; font-family:'Poppins',sans-serif; min-height:70px; resize:vertical; }
+.notice-form .row { display:flex; gap:10px; margin-top:8px; }
+.pill { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:10px; }
+.pill.reviewed { background:#7d8a4c22; color:#5a7d3c; }
+.pill.dismissed { background:#a13a2e22; color:#a13a2e; }
+input[type="text"] { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; }
+input[type="text"]:focus { border-color:#c99a54; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.visit-map { height:280px; border-radius:8px; margin-top:16px; }
+.coords-note { font-size:12px; color:#5a412899; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -53,6 +86,8 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
   const contentEl = document.getElementById('content');
   let adminToken = sessionStorage.getItem('dumbbrew_admin_access_token');
   let currentStatus = 'pending';
+  let currentView = 'applications';
+  let currentReportStatus = 'pending';
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -63,7 +98,7 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
   if (!adminToken) {
     renderLogin();
   } else {
-    renderDashboard();
+    renderMain();
   }
 
   function renderLogin(errorMsg) {
@@ -99,7 +134,7 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
           }
           adminToken = res.body.accessToken;
           sessionStorage.setItem('dumbbrew_admin_access_token', adminToken);
-          renderDashboard();
+          renderMain();
         })
         .catch(function () {
           btn.disabled = false;
@@ -108,14 +143,38 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
     });
   }
 
-  function renderDashboard() {
+  function renderMain() {
     contentEl.innerHTML =
       '<div id="credential-slot"></div>' +
+      '<div class="view-tabs">' +
+        [['applications', 'Applications'], ['reports', 'Reports'], ['storefront', 'Storefront']].map(function (v) {
+          return '<button type="button" class="view-tab' + (v[0] === currentView ? ' active' : '') + '" data-view="' + v[0] + '">' + v[1] + '</button>';
+        }).join('') +
+        '<button class="link" id="btn-logout" style="margin-left:auto;">Sign Out</button>' +
+      '</div>' +
+      '<div id="view-body"></div>';
+
+    document.getElementById('btn-logout').addEventListener('click', function () {
+      sessionStorage.removeItem('dumbbrew_admin_access_token');
+      adminToken = null;
+      renderLogin();
+    });
+    document.querySelectorAll('.view-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        currentView = btn.dataset.view;
+        renderMain();
+      });
+    });
+
+    if (currentView === 'reports') renderReportsBody();
+    else if (currentView === 'storefront') renderStorefrontBody();
+    else renderApplicationsBody();
+  }
+
+  function renderApplicationsBody() {
+    document.getElementById('view-body').innerHTML =
       '<div class="card">' +
-        '<div style="display:flex; align-items:center; justify-content:space-between;">' +
-          '<h1>Seller Applications</h1>' +
-          '<button class="link" id="btn-logout">Sign Out</button>' +
-        '</div>' +
+        '<h1>Seller Applications</h1>' +
         '<div class="tabs" id="tabs">' +
           ['pending', 'approved', 'rejected'].map(function (s) {
             return '<div class="tab' + (s === currentStatus ? ' active' : '') + '" data-status="' + s + '">' + s + '</div>';
@@ -124,15 +183,10 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
         '<div id="sellers">Loading&hellip;</div>' +
       '</div>';
 
-    document.getElementById('btn-logout').addEventListener('click', function () {
-      sessionStorage.removeItem('dumbbrew_admin_access_token');
-      adminToken = null;
-      renderLogin();
-    });
     document.querySelectorAll('#tabs .tab').forEach(function (tab) {
       tab.addEventListener('click', function () {
         currentStatus = tab.dataset.status;
-        renderDashboard();
+        renderApplicationsBody();
       });
     });
 
@@ -151,6 +205,28 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
     document.getElementById('btn-dismiss-cred').addEventListener('click', function () {
       slot.innerHTML = '';
     });
+  }
+
+  // Mirrors adminSellers.controller.ts's VERIFIABLE_FIELDS/CONDITIONAL_FIELDS
+  // — the server is the source of truth (it re-checks on approve), this just
+  // drives which checkboxes render and whether Approve looks clickable.
+  const FIELD_DEFS = [
+    { key: 'store_name', label: 'Store name' },
+    { key: 'owner_full_name', label: 'Owner name' },
+    { key: 'contact', label: 'Email & phone' },
+    { key: 'address', label: 'Address' },
+    { key: 'description', label: 'Description' },
+    { key: 'gst_number', label: 'GST number', applies: function (s) { return !!s.gst_number; } },
+    { key: 'images', label: 'Store photos', applies: function (s) { return (s.store_image_urls || []).length > 0; } }
+  ];
+
+  function applicableFields(s) {
+    return FIELD_DEFS.filter(function (f) { return !f.applies || f.applies(s); });
+  }
+
+  function allVerified(s) {
+    const vf = s.verified_fields || {};
+    return applicableFields(s).every(function (f) { return !!vf[f.key]; });
   }
 
   function loadSellers() {
@@ -176,26 +252,70 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
         }
         el.innerHTML = sellers.map(function (s) {
           const date = new Date(s.applied_at);
-          const imgSrc = s.store_image_key && window.assetUrl ? window.assetUrl(s.store_image_key) : null;
+          const images = s.store_image_urls || [];
+          const galleryHtml = images.length
+            ? images.map(function (url) {
+                return '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '"/></a>';
+              }).join('')
+            : '<span class="none">No photos uploaded</span>';
+
+          const checklistHtml = currentStatus === 'pending'
+            ? '<div class="checklist">' +
+                '<div class="checklist-title">Verify before approving</div>' +
+                applicableFields(s).map(function (f) {
+                  const checked = !!(s.verified_fields && s.verified_fields[f.key]);
+                  return '<label class="checklist-item' + (checked ? ' checked' : '') + '">' +
+                    '<input type="checkbox" data-verify-field="' + f.key + '"' + (checked ? ' checked' : '') + '/>' +
+                    escapeHtml(f.label) +
+                  '</label>';
+                }).join('') +
+              '</div>'
+            : '';
+
+          const approveDisabled = currentStatus === 'pending' && !allVerified(s);
+
           return '<div class="seller-row" data-id="' + s.id + '">' +
-            (imgSrc ? '<img class="seller-thumb" src="' + imgSrc + '"/>' : '<div class="seller-thumb"></div>') +
             '<div class="seller-body">' +
               '<div class="seller-head">' +
                 '<span class="seller-name">' + escapeHtml(s.store_name) + '</span>' +
                 '<span class="seller-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
               '</div>' +
+              '<div class="gallery">' + galleryHtml + '</div>' +
               '<div class="seller-meta">' +
                 '<div>' + escapeHtml(s.owner_full_name || '') + ' &middot; ' + escapeHtml(s.email || '') + ' &middot; ' + escapeHtml(s.phone || '') + '</div>' +
                 '<div>' + [s.address_line1, s.address_line2, s.city, s.state, s.pincode].filter(Boolean).map(escapeHtml).join(', ') + '</div>' +
                 (s.gst_number ? '<div>GST: ' + escapeHtml(s.gst_number) + '</div>' : '') +
               '</div>' +
               (s.description ? '<div class="seller-desc">' + escapeHtml(s.description) + '</div>' : '') +
+              checklistHtml +
               (currentStatus === 'pending'
-                ? '<div class="actions"><button class="approve" data-action="approved">Approve</button><button class="reject" data-action="rejected">Reject</button></div>'
+                ? '<div class="actions">' +
+                    '<button class="approve" data-action="approved"' + (approveDisabled ? ' disabled' : '') + '>Approve</button>' +
+                    '<button class="reject" data-action="rejected">Reject</button>' +
+                    (approveDisabled ? '<span class="approve-hint">Tick off every field first</span>' : '') +
+                  '</div>'
                 : '') +
             '</div>' +
           '</div>';
         }).join('');
+
+        el.querySelectorAll('[data-verify-field]').forEach(function (checkbox) {
+          checkbox.addEventListener('change', function () {
+            const row = checkbox.closest('.seller-row');
+            const id = row.dataset.id;
+            const field = checkbox.dataset.verifyField;
+            const verified = checkbox.checked;
+            checkbox.disabled = true;
+            fetch(API_BASE + '/api/admin/sellers/' + id + '/verify', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+              body: JSON.stringify({ field: field, verified: verified })
+            })
+              .then(function (r) { return r.json(); })
+              .then(function () { loadSellers(); })
+              .catch(function () { checkbox.disabled = false; checkbox.checked = !verified; });
+          });
+        });
 
         el.querySelectorAll('[data-action]').forEach(function (btn) {
           btn.addEventListener('click', function () {
@@ -208,10 +328,17 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
               headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
               body: JSON.stringify({ status: status })
             })
-              .then(function (r) { return r.json(); })
-              .then(function (body) {
-                if (body.generatedPassword) {
-                  showCredentials(body.seller.email, body.generatedPassword);
+              .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+              .then(function (res) {
+                if (!res.ok) {
+                  btn.disabled = false;
+                  if (res.body && res.body.error === 'fields_not_verified') {
+                    loadSellers();
+                  }
+                  return;
+                }
+                if (res.body.generatedPassword) {
+                  showCredentials(res.body.seller.email, res.body.generatedPassword);
                 }
                 loadSellers();
               });
@@ -221,6 +348,258 @@ button.link { background:none; border:none; color:#8a5527; font-size:13px; curso
       .catch(function () {
         el.innerHTML = '<div class="sub">Couldn\'t load applications right now.</div>';
       });
+  }
+
+  // --- Reports (customer -> admin -> seller notice) ---
+
+  function renderReportsBody() {
+    document.getElementById('view-body').innerHTML =
+      '<div class="card">' +
+        '<h1>Seller Reports</h1>' +
+        '<div class="tabs" id="report-tabs">' +
+          ['pending', 'reviewed', 'dismissed'].map(function (s) {
+            return '<div class="tab' + (s === currentReportStatus ? ' active' : '') + '" data-status="' + s + '">' + s + '</div>';
+          }).join('') +
+        '</div>' +
+        '<div id="reports">Loading&hellip;</div>' +
+      '</div>';
+
+    document.querySelectorAll('#report-tabs .tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        currentReportStatus = tab.dataset.status;
+        renderReportsBody();
+      });
+    });
+
+    loadReports();
+  }
+
+  function loadReports() {
+    const el = document.getElementById('reports');
+    const { API_BASE } = window.APP_CONFIG;
+    fetch(API_BASE + '/api/admin/reports?status=' + currentReportStatus, {
+      headers: { Authorization: 'Bearer ' + adminToken }
+    })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          sessionStorage.removeItem('dumbbrew_admin_access_token');
+          renderLogin('Your session expired — please sign in again.');
+          return null;
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        const reports = data.reports || [];
+        if (!reports.length) {
+          el.innerHTML = '<div class="sub">No ' + currentReportStatus + ' reports.</div>';
+          return;
+        }
+        el.innerHTML = reports.map(function (r) {
+          const date = new Date(r.created_at);
+          const seller = r.sellers || {};
+          const customer = r.customers || {};
+          const item = r.order_items;
+          return '<div class="report-row" data-id="' + r.id + '">' +
+            '<div class="report-head">' +
+              '<span class="report-seller">' + escapeHtml(seller.store_name || r.seller_id) + '</span>' +
+              '<span class="report-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) +
+                (r.status !== 'pending' ? ' <span class="pill ' + escapeHtml(r.status) + '">' + escapeHtml(r.status) + '</span>' : '') +
+              '</span>' +
+            '</div>' +
+            '<div class="report-meta">' +
+              'Reported by ' + escapeHtml(customer.username || customer.email || 'a customer') +
+              (item && item.products ? ' &middot; re: ' + escapeHtml(item.products.name) : '') +
+            '</div>' +
+            '<div class="report-reason">' + escapeHtml(r.reason) + '</div>' +
+            (r.status === 'pending'
+              ? '<div class="actions">' +
+                  '<button class="reject" data-toggle-notice>Send Notice</button>' +
+                  '<button class="reject" data-dismiss>Dismiss</button>' +
+                '</div>' +
+                '<div class="notice-form" data-notice-slot hidden>' +
+                  '<label style="margin-top:10px;">Warning message to seller</label>' +
+                  '<textarea placeholder="Describe what the seller needs to fix..."></textarea>' +
+                  '<div class="row">' +
+                    '<button class="approve" data-send-notice>Send</button>' +
+                  '</div>' +
+                  '<div class="msg" data-notice-msg></div>' +
+                '</div>'
+              : (r.reviewed_by ? '<div class="sub">Handled by ' + escapeHtml(r.reviewed_by) + '</div>' : '')) +
+          '</div>';
+        }).join('');
+
+        el.querySelectorAll('[data-toggle-notice]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const slot = btn.closest('.report-row').querySelector('[data-notice-slot]');
+            slot.hidden = !slot.hidden;
+          });
+        });
+
+        el.querySelectorAll('[data-dismiss]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const id = btn.closest('.report-row').dataset.id;
+            btn.disabled = true;
+            fetch(API_BASE + '/api/admin/reports/' + id + '/dismiss', {
+              method: 'PATCH',
+              headers: { Authorization: 'Bearer ' + adminToken }
+            }).then(function () { loadReports(); });
+          });
+        });
+
+        el.querySelectorAll('[data-send-notice]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const row = btn.closest('.report-row');
+            const id = row.dataset.id;
+            const textarea = row.querySelector('.notice-form textarea');
+            const msgEl = row.querySelector('[data-notice-msg]');
+            const message = textarea.value.trim();
+            if (message.length < 5) {
+              msgEl.className = 'msg err';
+              msgEl.textContent = 'Enter a warning message first.';
+              return;
+            }
+            btn.disabled = true;
+            fetch(API_BASE + '/api/admin/reports/' + id + '/notice', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+              body: JSON.stringify({ message: message })
+            })
+              .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+              .then(function (res) {
+                if (!res.ok) {
+                  btn.disabled = false;
+                  msgEl.className = 'msg err';
+                  msgEl.textContent = 'Could not send that notice.';
+                  return;
+                }
+                loadReports();
+              });
+          });
+        });
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load reports right now.</div>';
+      });
+  }
+
+  // --- Storefront (visit.html's address/hours + Leaflet map location) ---
+
+  let storefrontMap = null;
+  let storefrontMarker = null;
+
+  function renderStorefrontBody() {
+    document.getElementById('view-body').innerHTML =
+      '<div class="card">' +
+        '<h1>Storefront</h1>' +
+        '<div class="sub" style="margin-bottom:10px;">Shown on visit.html — address, hours, and the exact map location (click or drag the pin to set it).</div>' +
+        '<div id="storefront-form">Loading&hellip;</div>' +
+      '</div>';
+    loadStorefront();
+  }
+
+  function loadStorefront() {
+    const el = document.getElementById('storefront-form');
+    const { API_BASE } = window.APP_CONFIG;
+    fetch(API_BASE + '/api/admin/visit-info', { headers: { Authorization: 'Bearer ' + adminToken } })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          sessionStorage.removeItem('dumbbrew_admin_access_token');
+          renderLogin('Your session expired — please sign in again.');
+          return null;
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        renderStorefrontForm(data.visit || {});
+      })
+      .catch(function () {
+        el.innerHTML = '<div class="sub">Couldn\'t load storefront info right now.</div>';
+      });
+  }
+
+  function renderStorefrontForm(v) {
+    const el = document.getElementById('storefront-form');
+    // Falls back to the middle of India when no location has ever been set,
+    // just so the map has somewhere to open rather than erroring.
+    const lat = v.lat != null ? Number(v.lat) : 20.5937;
+    const lng = v.lng != null ? Number(v.lng) : 78.9629;
+
+    el.innerHTML =
+      '<label for="vf-address">Address</label><input type="text" id="vf-address" value="' + escapeHtml(v.address || '') + '"/>' +
+      '<label for="vf-note">Address note</label><input type="text" id="vf-note" value="' + escapeHtml(v.address_note || '') + '"/>' +
+      '<div class="two-col">' +
+        '<div><label for="vf-weekday">Hours (Mon&ndash;Fri)</label><input type="text" id="vf-weekday" value="' + escapeHtml(v.hours_weekday || '') + '"/></div>' +
+        '<div><label for="vf-weekend">Hours (Sat&ndash;Sun)</label><input type="text" id="vf-weekend" value="' + escapeHtml(v.hours_weekend || '') + '"/></div>' +
+      '</div>' +
+      '<div class="two-col">' +
+        '<div><label for="vf-phone">Phone</label><input type="text" id="vf-phone" value="' + escapeHtml(v.phone || '') + '"/></div>' +
+        '<div><label for="vf-email">Email</label><input type="text" id="vf-email" value="' + escapeHtml(v.email || '') + '"/></div>' +
+      '</div>' +
+      '<label>Map location</label>' +
+      '<div class="visit-map" id="storefront-map"></div>' +
+      '<div class="coords-note" id="storefront-coords">' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '</div>' +
+      '<button class="primary" id="btn-save-storefront">Save</button>' +
+      '<div id="storefront-msg"></div>';
+
+    if (storefrontMap) { storefrontMap.remove(); storefrontMap = null; }
+    storefrontMap = window.L.map('storefront-map').setView([lat, lng], v.lat != null ? 16 : 4);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(storefrontMap);
+    storefrontMarker = window.L.marker([lat, lng], { draggable: true }).addTo(storefrontMap);
+
+    const coordsEl = document.getElementById('storefront-coords');
+    function setCoords(latlng) {
+      coordsEl.textContent = latlng.lat.toFixed(5) + ', ' + latlng.lng.toFixed(5);
+    }
+    storefrontMarker.on('dragend', function () { setCoords(storefrontMarker.getLatLng()); });
+    storefrontMap.on('click', function (e) {
+      storefrontMarker.setLatLng(e.latlng);
+      setCoords(e.latlng);
+    });
+
+    document.getElementById('btn-save-storefront').addEventListener('click', function () {
+      const btn = document.getElementById('btn-save-storefront');
+      const msgEl = document.getElementById('storefront-msg');
+      const latlng = storefrontMarker.getLatLng();
+      const payload = {
+        address: document.getElementById('vf-address').value.trim(),
+        addressNote: document.getElementById('vf-note').value.trim(),
+        hoursWeekday: document.getElementById('vf-weekday').value.trim(),
+        hoursWeekend: document.getElementById('vf-weekend').value.trim(),
+        phone: document.getElementById('vf-phone').value.trim(),
+        email: document.getElementById('vf-email').value.trim(),
+        lat: latlng.lat,
+        lng: latlng.lng
+      };
+      if (!payload.address || !payload.hoursWeekday || !payload.hoursWeekend) {
+        msgEl.innerHTML = '<div class="msg err">Address and both hours fields are required.</div>';
+        return;
+      }
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
+      fetch(window.APP_CONFIG.API_BASE + '/api/admin/visit-info', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+        body: JSON.stringify(payload)
+      })
+        .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+        .then(function (res) {
+          btn.disabled = false;
+          if (!res.ok) {
+            msgEl.innerHTML = '<div class="msg err">Could not save. Check the required fields.</div>';
+            return;
+          }
+          msgEl.innerHTML = '<div class="msg ok">Saved — visit.html will show this on its next load.</div>';
+        })
+        .catch(function () {
+          btn.disabled = false;
+          msgEl.innerHTML = '<div class="msg err">Could not save right now.</div>';
+        });
+    });
   }
 })();
 </script>

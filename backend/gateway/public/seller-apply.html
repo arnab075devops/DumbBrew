@@ -88,13 +88,15 @@ button.secondary { padding:10px 16px; background:#fff; color:#5a4128; border:1px
       '<input type="text" id="fld-gst" maxlength="20"/>' +
       '<label for="fld-desc">Tell customers about your store</label>' +
       '<textarea id="fld-desc" maxlength="1000"></textarea>' +
-      '<label for="fld-image">Store / cart photo</label>' +
-      '<input type="file" id="fld-image" accept="image/png,image/jpeg,image/webp"/>' +
-      '<div class="file-row" id="file-row" style="display:none;"><img class="thumb" id="file-thumb"/><span class="hint" id="file-status"></span></div>' +
+      '<label for="fld-image">Store / cart photos</label>' +
+      '<input type="file" id="fld-image" accept="image/png,image/jpeg,image/webp" multiple/>' +
+      '<div class="hint" id="file-status"></div>' +
+      '<div class="file-row" id="file-row" style="display:none;"></div>' +
       '<button class="primary" id="btn-apply">Submit Application</button>' +
       '<div id="apply-msg"></div>';
 
-    let lat, lng, uploadedImageKey;
+    let lat, lng;
+    let photos = []; // { file, previewUrl, status: 'uploading'|'done'|'error', imageKey }
 
     document.getElementById('btn-geo').addEventListener('click', function () {
       const statusEl = document.getElementById('geo-status');
@@ -107,7 +109,27 @@ button.secondary { padding:10px 16px; background:#fff; color:#5a4128; border:1px
         function (pos) {
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
-          statusEl.textContent = 'Location captured — still fill in the address fields above.';
+          statusEl.textContent = 'Location captured — looking up your address…';
+          fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&addressdetails=1')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              const addr = data && data.address ? data.address : {};
+              const line1 = [addr.house_number, addr.road].filter(Boolean).join(' ') ||
+                addr.neighbourhood || addr.suburb || '';
+              const city = addr.city || addr.town || addr.village || addr.county || '';
+              const state = addr.state || '';
+              const pincode = addr.postcode || '';
+              if (line1) document.getElementById('fld-line1').value = line1;
+              if (city) document.getElementById('fld-city').value = city;
+              if (state) document.getElementById('fld-state').value = state;
+              if (pincode) document.getElementById('fld-pincode').value = pincode;
+              statusEl.textContent = (line1 || city)
+                ? 'Address filled in from your location — double-check it before submitting.'
+                : 'Location captured, but couldn\'t work out an address — please fill the fields in above.';
+            })
+            .catch(function () {
+              statusEl.textContent = 'Location captured, but the address lookup failed — please fill the fields in above.';
+            });
         },
         function () {
           statusEl.textContent = 'Could not get your location — you can skip this, the address fields are what matters.';
@@ -115,35 +137,86 @@ button.secondary { padding:10px 16px; background:#fff; color:#5a4128; border:1px
       );
     });
 
-    document.getElementById('fld-image').addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      const fileRow = document.getElementById('file-row');
-      const statusEl = document.getElementById('file-status');
-      const thumb = document.getElementById('file-thumb');
-      uploadedImageKey = undefined;
-      if (!file) { fileRow.style.display = 'none'; return; }
-      fileRow.style.display = 'flex';
-      thumb.src = URL.createObjectURL(file);
-      statusEl.textContent = 'Uploading…';
+    const MAX_PHOTOS = 8;
+    const fileRow = document.getElementById('file-row');
+    const fileStatusEl = document.getElementById('file-status');
 
+    function renderPhotos() {
+      fileRow.innerHTML = '';
+      if (!photos.length) { fileRow.style.display = 'none'; return; }
+      fileRow.style.display = 'flex';
+      fileRow.style.flexWrap = 'wrap';
+      photos.forEach(function (p) {
+        const wrap = document.createElement('div');
+        wrap.style.position = 'relative';
+        const thumb = document.createElement('img');
+        thumb.className = 'thumb';
+        thumb.src = p.previewUrl;
+        thumb.style.opacity = p.status === 'error' ? '0.4' : (p.status === 'uploading' ? '0.7' : '1');
+        wrap.appendChild(thumb);
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.textContent = '×';
+        rm.title = 'Remove photo';
+        rm.style.cssText = 'position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; border:none; background:#17100a; color:#f0e5d1; font-size:12px; line-height:1; cursor:pointer;';
+        rm.addEventListener('click', function () {
+          photos = photos.filter(function (x) { return x !== p; });
+          renderPhotos();
+          updatePhotoStatus();
+        });
+        wrap.appendChild(rm);
+        fileRow.appendChild(wrap);
+      });
+    }
+
+    function updatePhotoStatus() {
+      if (!photos.length) { fileStatusEl.textContent = ''; return; }
+      const done = photos.filter(function (p) { return p.status === 'done'; }).length;
+      const failed = photos.filter(function (p) { return p.status === 'error'; }).length;
+      fileStatusEl.textContent = done + ' of ' + photos.length + ' photo(s) uploaded.' +
+        (failed ? ' ' + failed + ' failed — remove and retry.' : '');
+    }
+
+    function uploadPhoto(p) {
       const { API_BASE } = window.APP_CONFIG;
       fetch(API_BASE + '/api/sellers/applications/upload-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, contentType: file.type })
+        body: JSON.stringify({ fileName: p.file.name, contentType: p.file.type })
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+          return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': p.file.type }, body: p.file })
             .then(function (putRes) {
               if (!putRes.ok) throw new Error('upload failed');
-              uploadedImageKey = data.imageKey;
-              statusEl.textContent = 'Photo uploaded.';
+              p.status = 'done';
+              p.imageKey = data.imageKey;
             });
         })
         .catch(function () {
-          statusEl.textContent = 'Could not upload that photo — you can still submit without it.';
+          p.status = 'error';
+        })
+        .then(function () {
+          renderPhotos();
+          updatePhotoStatus();
         });
+    }
+
+    document.getElementById('fld-image').addEventListener('change', function (e) {
+      const newFiles = Array.prototype.slice.call(e.target.files);
+      e.target.value = ''; // reset so picking again (even the same file) fires 'change' and doesn't wipe this selection
+      const room = MAX_PHOTOS - photos.length;
+      if (room <= 0) {
+        fileStatusEl.textContent = 'You can upload up to ' + MAX_PHOTOS + ' photos — remove one to add another.';
+        return;
+      }
+      newFiles.slice(0, room).forEach(function (file) {
+        const p = { file: file, previewUrl: URL.createObjectURL(file), status: 'uploading', imageKey: undefined };
+        photos.push(p);
+        uploadPhoto(p);
+      });
+      renderPhotos();
+      updatePhotoStatus();
     });
 
     const btn = document.getElementById('btn-apply');
@@ -186,7 +259,7 @@ button.secondary { padding:10px 16px; background:#fff; color:#5a4128; border:1px
           lng: lng,
           gstNumber: gstNumber || undefined,
           description: description,
-          storeImageKey: uploadedImageKey
+          storeImageKeys: photos.filter(function (p) { return p.status === 'done'; }).map(function (p) { return p.imageKey; })
         })
       })
         .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })

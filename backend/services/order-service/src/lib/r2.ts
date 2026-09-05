@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { config } from "../config.js";
 
@@ -30,4 +30,14 @@ export async function createUploadUrl(
   const command = new PutObjectCommand({ Bucket: config.r2Bucket, Key: imageKey, ContentType: contentType });
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
   return { uploadUrl, imageKey };
+}
+
+// The seller-applications bucket has no public r2.dev domain (unlike
+// R2_BASE, which serves the site's already-approved media) — an applicant's
+// photos shouldn't be world-readable before an admin has even looked at
+// them. So admin-sellers.html gets a short-lived signed GET URL per image
+// instead of a public one.
+export async function createDownloadUrl(imageKey: string): Promise<string> {
+  const command = new GetObjectCommand({ Bucket: config.r2Bucket, Key: imageKey });
+  return getSignedUrl(s3, command, { expiresIn: 600 });
 }

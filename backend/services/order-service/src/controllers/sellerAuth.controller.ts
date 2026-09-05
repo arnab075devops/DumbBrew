@@ -53,7 +53,7 @@ export async function resetSellerPassword(req: FastifyRequest, reply: FastifyRep
 
 export async function getMySeller(req: FastifyRequest, reply: FastifyReply) {
   const rows = await supabaseJson<unknown[]>(
-    `sellers?id=eq.${req.sellerId}&select=id,store_name,description,status,owner_full_name,email,phone,address_line1,address_line2,city,state,pincode,gst_number,store_image_key,must_reset_password&limit=1`
+    `sellers?id=eq.${req.sellerId}&select=id,store_name,description,status,owner_full_name,email,phone,address_line1,address_line2,city,state,pincode,gst_number,store_image_keys,must_reset_password&limit=1`
   );
   return reply.send({ seller: (rows as any[])[0] ?? null });
 }

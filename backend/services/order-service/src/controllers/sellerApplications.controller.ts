@@ -16,7 +16,7 @@ const applicationSchema = z.object({
   lng: z.number().min(-180).max(180).optional(),
   gstNumber: z.string().max(20).optional(),
   description: z.string().max(1000).optional().default(""),
-  storeImageKey: z.string().max(300).optional()
+  storeImageKeys: z.array(z.string().max(300)).max(8).optional().default([])
 });
 
 // Public — anyone can apply without a DumbBrew account. No credentials exist
@@ -50,7 +50,7 @@ export async function applyAsSeller(req: FastifyRequest, reply: FastifyReply) {
       lng: parsed.data.lng ?? null,
       gst_number: parsed.data.gstNumber ?? null,
       description: parsed.data.description,
-      store_image_key: parsed.data.storeImageKey ?? null
+      store_image_keys: parsed.data.storeImageKeys
     })
   });
   return reply.code(201).send({ seller: (created as any[])[0] });

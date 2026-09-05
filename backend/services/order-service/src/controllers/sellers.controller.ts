@@ -230,14 +230,47 @@ export async function deleteMyCollection(req: FastifyRequest<{ Params: { id: str
 
 // --- Orders / fulfillment ---
 
-export async function listMySales(req: FastifyRequest, reply: FastifyReply) {
+const salesRangeSchema = z.object({
+  from: z.string().refine((s) => !isNaN(new Date(s).getTime()), "invalid date").optional(),
+  to: z.string().refine((s) => !isNaN(new Date(s).getTime()), "invalid date").optional()
+});
+
+// Defaults to the current calendar month so "Your Sales" opens on something
+// immediately useful; from/to (YYYY-MM-DD) let the seller pick any fixed
+// window instead. `to` is treated as inclusive of the whole day.
+export async function listMySales(
+  req: FastifyRequest<{ Querystring: { from?: string; to?: string } }>,
+  reply: FastifyReply
+) {
   if (!(await requireApprovedSeller(req.sellerId!))) {
     return reply.code(403).send({ error: "not_an_approved_seller" });
   }
-  const rows = await supabaseJson<unknown[]>(
-    `seller_orders?seller_id=eq.${req.sellerId}&select=*&order=created_at.desc`
+  const parsed = salesRangeSchema.safeParse(req.query);
+  if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
+
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const from = parsed.data.from ? new Date(parsed.data.from) : monthStart;
+  const to = parsed.data.to ? new Date(new Date(parsed.data.to).getTime() + 24 * 60 * 60 * 1000) : monthEnd;
+
+  const rows = await supabaseJson<Array<{ order_id: number; quantity: number; unit_price: string }>>(
+    `seller_orders?seller_id=eq.${req.sellerId}&created_at=gte.${from.toISOString()}&created_at=lt.${to.toISOString()}&select=*&order=created_at.desc`
   );
-  return reply.send({ sales: rows });
+  const summary = rows.reduce(
+    (acc, r) => {
+      acc.revenue += Number(r.unit_price) * r.quantity;
+      acc.itemsSold += r.quantity;
+      acc.orderIds.add(r.order_id);
+      return acc;
+    },
+    { revenue: 0, itemsSold: 0, orderIds: new Set<number>() }
+  );
+  return reply.send({
+    sales: rows,
+    summary: { revenue: summary.revenue, itemsSold: summary.itemsSold, orders: summary.orderIds.size },
+    range: { from: from.toISOString(), to: new Date(to.getTime() - 1).toISOString() }
+  });
 }
 
 export async function fulfillOrderItem(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
@@ -253,4 +286,24 @@ export async function fulfillOrderItem(req: FastifyRequest<{ Params: { id: strin
   });
   if (!updated[0]) return reply.code(404).send({ error: "not_found" });
   return reply.send({ orderItem: updated[0] });
+}
+
+// --- Notices (admin warnings shown on the seller's own dashboard) ---
+
+export async function listMyNotices(req: FastifyRequest, reply: FastifyReply) {
+  const rows = await supabaseJson<unknown[]>(
+    `seller_notices?seller_id=eq.${req.sellerId}&select=*&order=created_at.desc`
+  );
+  return reply.send({ notices: rows });
+}
+
+export async function acknowledgeNotice(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  // &seller_id=eq.<caller> is the ownership check, same pattern as fulfillOrderItem.
+  const updated = await supabaseJson<any[]>(`seller_notices?id=eq.${req.params.id}&seller_id=eq.${req.sellerId}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ acknowledged_at: new Date().toISOString() })
+  });
+  if (!updated[0]) return reply.code(404).send({ error: "not_found" });
+  return reply.send({ notice: updated[0] });
 }

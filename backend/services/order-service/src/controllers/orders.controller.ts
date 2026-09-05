@@ -6,7 +6,7 @@ import { config } from "../config.js";
 
 export async function listOrders(req: FastifyRequest, reply: FastifyReply) {
   const orders = await supabaseJson<unknown[]>(
-    `orders?customer_id=eq.${req.customerId}&select=id,amount,payment_status,created_at,order_items(id,quantity,unit_price,product_id,variant_id,fulfillment_status,products(name,image_key),product_variants(title))&order=created_at.desc`
+    `orders?customer_id=eq.${req.customerId}&select=id,amount,payment_status,created_at,order_items(id,quantity,unit_price,product_id,variant_id,seller_id,fulfillment_status,products(name,image_key),product_variants(title),product_reviews(rating,comment))&order=created_at.desc`
   );
   return reply.send({ orders });
 }

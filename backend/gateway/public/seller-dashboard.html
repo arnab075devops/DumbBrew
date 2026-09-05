@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seller Dashboard – DumbBrew</title>
 <script src="./config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -49,6 +50,27 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
 .remove-x { background:none; border:none; color:#a13a2e; cursor:pointer; font-size:16px; padding:0 6px; }
 .collection-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid #3b241418; font-size:14px; }
 .collection-row:first-child { border-top:none; }
+.tabs { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+.tab-btn { padding:10px 18px; background:#faf5ea; border:1px solid #3b241422; border-radius:8px; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:#5a4128; cursor:pointer; }
+.tab-btn.active { background:#17100a; color:#f0e5d1; border-color:#17100a; }
+.tab-panel[hidden] { display:none; }
+.notice-card { background:#a13a2e14; border:1px solid #a13a2e33; border-radius:14px; padding:20px 24px; margin-bottom:28px; }
+.notice-row { padding:12px 0; border-top:1px solid #a13a2e22; }
+.notice-row:first-child { border-top:none; padding-top:0; }
+.notice-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.notice-title { font-weight:700; color:#a13a2e; font-size:12px; letter-spacing:0.5px; text-transform:uppercase; }
+.notice-msg { font-size:14px; margin-top:6px; }
+.notice-date { font-size:11px; color:#5a412899; margin-top:4px; }
+.sales-controls { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.sales-controls .field label { margin:0 0 6px; }
+.sales-controls input[type="date"] { width:auto; padding:10px 12px; }
+.summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
+.summary-tile { background:#3b241408; border-radius:10px; padding:16px; text-align:center; }
+.summary-tile .num { font-family:'Playfair Display',serif; font-size:24px; font-weight:900; color:#17100a; }
+.summary-tile .label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#5a4128; margin-top:4px; }
+.chart-card { background:#faf5ea; border:1px solid #3b241418; border-radius:10px; padding:16px 18px 8px; margin-bottom:24px; }
+.chart-title { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:10px; }
+.chart-wrap { position:relative; height:220px; }
 </style>
 </head>
 <body>
@@ -67,7 +89,12 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function money(n) { return '$' + Number(n).toFixed(2); }
+  // Amounts are already rupee-denominated end to end (Razorpay orders are
+  // created with currency:'INR', see order-service's lib/razorpay.ts) — this
+  // was previously mislabeled with a $ prefix, not a currency conversion.
+  function money(n) {
+    return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   function thumbUrl(key) { return key && window.assetUrl ? window.assetUrl(key) : null; }
 
   if (!token) {
@@ -191,21 +218,47 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
           '<button class="link" id="btn-logout">Sign Out</button>' +
         '</div>' +
       '</div>' +
-      '<div class="card" id="product-form-card"></div>' +
-      '<div class="card">' +
-        '<h2>Your Products</h2>' +
-        '<div id="products">Loading&hellip;</div>' +
+      '<div id="notices"></div>' +
+      '<div class="tabs">' +
+        '<button type="button" class="tab-btn active" data-tab="add">Add a Product</button>' +
+        '<button type="button" class="tab-btn" data-tab="products">Your Products</button>' +
+        '<button type="button" class="tab-btn" data-tab="collections">Collections</button>' +
+        '<button type="button" class="tab-btn" data-tab="sales">Your Sales</button>' +
       '</div>' +
-      '<div class="card">' +
-        '<h2>Collections</h2>' +
-        '<label for="cf-title">New collection</label>' +
-        '<div style="display:flex; gap:10px;"><input type="text" id="cf-title" placeholder="e.g. Single Origin"/><button class="secondary" id="btn-add-collection">Add</button></div>' +
-        '<div id="collections">Loading&hellip;</div>' +
+      '<div class="tab-panel" id="tab-add">' +
+        '<div class="card" id="product-form-card"></div>' +
       '</div>' +
-      '<div class="card">' +
-        '<h2>Your Sales</h2>' +
-        '<div class="sub" style="margin-bottom:8px;">Paid orders only.</div>' +
-        '<div id="sales">Loading&hellip;</div>' +
+      '<div class="tab-panel" id="tab-products" hidden>' +
+        '<div class="card">' +
+          '<h2>Your Products</h2>' +
+          '<div id="products">Loading&hellip;</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tab-panel" id="tab-collections" hidden>' +
+        '<div class="card">' +
+          '<h2>Collections</h2>' +
+          '<label for="cf-title">New collection</label>' +
+          '<div style="display:flex; gap:10px;"><input type="text" id="cf-title" placeholder="e.g. Single Origin"/><button class="secondary" id="btn-add-collection">Add</button></div>' +
+          '<div id="collections">Loading&hellip;</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tab-panel" id="tab-sales" hidden>' +
+        '<div class="card">' +
+          '<h2>Your Sales</h2>' +
+          '<div class="sub" style="margin-bottom:16px;">Paid orders only. Shows the current month by default — pick a fixed range below to see another window.</div>' +
+          '<div class="sales-controls">' +
+            '<div class="field"><label for="sf-from">From</label><input type="date" id="sf-from"/></div>' +
+            '<div class="field"><label for="sf-to">To</label><input type="date" id="sf-to"/></div>' +
+            '<button class="secondary" id="btn-apply-range">Apply</button>' +
+            '<button class="link" id="btn-reset-range">This month</button>' +
+          '</div>' +
+          '<div id="sales-summary"></div>' +
+          '<div class="chart-card" id="sales-chart-card" hidden>' +
+            '<div class="chart-title">Revenue trend</div>' +
+            '<div class="chart-wrap"><canvas id="sales-chart" height="220"></canvas></div>' +
+          '</div>' +
+          '<div id="sales">Loading&hellip;</div>' +
+        '</div>' +
       '</div>';
 
     document.getElementById('btn-logout').addEventListener('click', function () {
@@ -214,11 +267,34 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       renderLogin();
     });
     document.getElementById('btn-add-collection').addEventListener('click', addCollection);
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { switchTab(btn.dataset.tab); });
+    });
+    document.getElementById('btn-apply-range').addEventListener('click', function () {
+      const from = document.getElementById('sf-from').value;
+      const to = document.getElementById('sf-to').value;
+      loadSales(from || undefined, to || undefined);
+    });
+    document.getElementById('btn-reset-range').addEventListener('click', function () {
+      document.getElementById('sf-from').value = '';
+      document.getElementById('sf-to').value = '';
+      loadSales();
+    });
 
     resetProductForm();
     loadCollections();
     loadProducts();
     loadSales();
+    loadNotices();
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach(function (panel) {
+      panel.hidden = panel.id !== 'tab-' + tab;
+    });
   }
 
   // --- Product form (add + edit share this) ---
@@ -392,7 +468,7 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
     });
     pendingImages = (product.product_images || []).map(function (img) { return { imageKey: img.image_key, alt: img.alt }; });
     renderProductForm(product);
-    document.getElementById('product-form-card').scrollIntoView({ behavior: 'smooth' });
+    switchTab('add');
   }
 
   function loadProducts() {
@@ -483,13 +559,89 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
 
   // --- Sales / fulfillment ---
 
-  function loadSales() {
+  let currentSalesRange = { from: undefined, to: undefined };
+  let salesChart = null;
+
+  // One bar per calendar day the revenue landed on — the day is what a
+  // seller picking a date range actually wants to see grow, not a raw list
+  // of transactions re-plotted in the same order as the table below it.
+  function renderSalesChart(sales) {
+    const cardEl = document.getElementById('sales-chart-card');
+    const canvas = document.getElementById('sales-chart');
+    if (!cardEl || !canvas || typeof Chart === 'undefined') return;
+    if (!sales.length) {
+      cardEl.hidden = true;
+      if (salesChart) { salesChart.destroy(); salesChart = null; }
+      return;
+    }
+    cardEl.hidden = false;
+
+    const byDay = new Map();
+    sales.forEach(function (s) {
+      const day = String(s.created_at).slice(0, 10); // YYYY-MM-DD
+      byDay.set(day, (byDay.get(day) || 0) + Number(s.unit_price) * s.quantity);
+    });
+    const days = Array.from(byDay.keys()).sort();
+    const labels = days.map(function (d) {
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    });
+    const values = days.map(function (d) { return byDay.get(d); });
+
+    if (salesChart) salesChart.destroy();
+    salesChart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Revenue',
+          data: values,
+          backgroundColor: '#b8722e',
+          hoverBackgroundColor: '#96591f',
+          borderRadius: 4,
+          maxBarThickness: 36
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (ctx) { return money(ctx.parsed.y); } } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#5a4128', font: { size: 11 } } },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#3b241412' },
+            ticks: { color: '#5a4128', font: { size: 11 }, callback: function (v) { return money(v); } }
+          }
+        }
+      }
+    });
+  }
+
+  function loadSales(from, to) {
+    currentSalesRange = { from: from, to: to };
     const el = document.getElementById('sales');
-    api('/api/sellers/orders', { method: 'GET' })
+    const summaryEl = document.getElementById('sales-summary');
+    const qs = [from ? 'from=' + encodeURIComponent(from) : '', to ? 'to=' + encodeURIComponent(to) : '']
+      .filter(Boolean).join('&');
+    api('/api/sellers/orders' + (qs ? '?' + qs : ''), { method: 'GET' })
       .then(function (data) {
         const sales = data.sales || [];
+        const summary = data.summary || { revenue: 0, itemsSold: 0, orders: 0 };
+        if (summaryEl) {
+          summaryEl.innerHTML =
+            '<div class="summary-grid">' +
+              '<div class="summary-tile"><div class="num">' + money(summary.revenue) + '</div><div class="label">Revenue</div></div>' +
+              '<div class="summary-tile"><div class="num">' + summary.orders + '</div><div class="label">Orders</div></div>' +
+              '<div class="summary-tile"><div class="num">' + summary.itemsSold + '</div><div class="label">Items sold</div></div>' +
+            '</div>';
+        }
+        renderSalesChart(sales);
         if (!sales.length) {
-          el.innerHTML = '<div class="sub">No paid sales yet.</div>';
+          el.innerHTML = '<div class="sub">No paid sales in this range.</div>';
           return;
         }
         el.innerHTML = sales.map(function (s) {
@@ -505,13 +657,51 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
         el.querySelectorAll('[data-fulfill]').forEach(function (btn) {
           btn.addEventListener('click', function () {
             const id = btn.closest('.sale-row').dataset.id;
-            api('/api/sellers/orders/' + id + '/fulfill', { method: 'PATCH' }).then(loadSales);
+            api('/api/sellers/orders/' + id + '/fulfill', { method: 'PATCH' })
+              .then(function () { loadSales(currentSalesRange.from, currentSalesRange.to); });
           });
         });
       })
       .catch(function () {
         el.innerHTML = '<div class="sub">Couldn\'t load your sales right now.</div>';
       });
+  }
+
+  // --- Notices (admin warnings) ---
+
+  function loadNotices() {
+    const el = document.getElementById('notices');
+    if (!el) return;
+    api('/api/sellers/notices', { method: 'GET' })
+      .then(function (data) {
+        const notices = (data.notices || []).filter(function (n) { return !n.acknowledged_at; });
+        if (!notices.length) {
+          el.innerHTML = '';
+          return;
+        }
+        el.innerHTML =
+          '<div class="notice-card">' +
+            '<div class="notice-title">Notice from DumbBrew</div>' +
+            notices.map(function (n) {
+              const date = new Date(n.created_at);
+              return '<div class="notice-row" data-id="' + n.id + '">' +
+                '<div class="notice-head">' +
+                  '<span class="notice-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</span>' +
+                  '<button class="link" data-ack>Dismiss</button>' +
+                '</div>' +
+                '<div class="notice-msg">' + escapeHtml(n.message) + '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        el.querySelectorAll('[data-ack]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const id = btn.closest('.notice-row').dataset.id;
+            btn.disabled = true;
+            api('/api/sellers/notices/' + id + '/ack', { method: 'PATCH' }).then(loadNotices);
+          });
+        });
+      })
+      .catch(function () {});
   }
 })();
 </script>

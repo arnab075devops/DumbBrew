@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "1d8c6c58e21a3d82",
+        "id": "89a8139add8eb3f3",
         "type": "tabs",
         "children": [
           {
-            "id": "c6be33eb07a2c081",
+            "id": "be9f4717a01b4041",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "01 Architecture/Repo Map.md",
+                "file": "04 Data Model/Supabase Schema.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Repo Map"
+              "title": "Supabase Schema"
             }
           }
         ]
@@ -185,16 +185,24 @@
       "bases:Create new base": false
     }
   },
-  "active": "b55880e39c32c968",
+  "active": "be9f4717a01b4041",
   "lastOpenFiles": [
+    "04 Data Model/Local Postgres Schema.md",
+    "01 Architecture/Repo Map.md",
+    "Home.md",
+    "02 Services/gateway.md",
+    "04 Data Model/Supabase Schema.md",
+    "06 Infra and Deploy/Docker Compose.md",
+    "07 Project State/Current Status.md",
+    "Glossary.md",
+    "01 Architecture/Auth Identity Systems.md",
+    "05 Frontend/config.js Reference.md",
     "07 Project State/Current Status.md.tmp.9500.ec6336d67bd2",
     "01 Architecture/Repo Map.md.tmp.9500.62be24fdaf54",
-    "Glossary.md",
     "Glossary.md.tmp.9500.e0ab3dd98ff5",
     "05 Frontend/Frontend Pages.md.tmp.9500.c8215ccd2c97",
     "07 Project State/Known Gaps.md",
     "07 Project State/Known Gaps.md.tmp.9500.dd453ee6f031",
-    "07 Project State/Current Status.md",
     "07 Project State/Current Status.md.tmp.9500.75996945bf3a",
     "06 Infra and Deploy/Monitoring.md",
     "06 Infra and Deploy/Monitoring.md.tmp.9500.770393302d68",
@@ -202,23 +210,14 @@
     "06 Infra and Deploy/Vercel Deploy.md.tmp.9500.6795a1238183",
     "06 Infra and Deploy/Terraform OCI.md",
     "06 Infra and Deploy/Terraform OCI.md.tmp.9500.49237a6a058c",
-    "06 Infra and Deploy/Docker Compose.md",
     "06 Infra and Deploy/Docker Compose.md.tmp.9500.ad95a122098b",
-    "05 Frontend/config.js Reference.md",
-    "05 Frontend/config.js Reference.md.tmp.9500.7bc6f471fb6b",
     "05 Frontend/Frontend Pages.md",
-    "02 Services/gateway.md",
     "02 Services/order-service.md",
     "02 Services/content-service.md",
     "02 Services/auth-service.md",
-    "04 Data Model/Local Postgres Schema.md",
-    "04 Data Model/Supabase Schema.md",
     "03 API Reference/Rate Limits.md",
-    "01 Architecture/Auth Identity Systems.md",
-    "Home.md",
     "03 API Reference/API Endpoint Map.md",
     "01 Architecture/Two Databases.md",
-    "01 Architecture/Repo Map.md",
     "01 Architecture/System Overview.md",
     "Welcome.md"
   ]

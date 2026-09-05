@@ -12,6 +12,8 @@
 <script src="./support.js"></script>
 <script src="./auth-nav.js"></script>
 <script src="./cart-nav.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 </head>
 <body>
 <x-dc>
@@ -86,8 +88,8 @@ a:hover { color: #7d8a4c; }
           </sc-if>
         </div>
       </div>
-      <div data-reveal="true" style="aspect-ratio:1; background:repeating-linear-gradient(0deg, #3b2414, #3b2414 12px, #241a10 12px, #241a10 24px); display:flex; align-items:center; justify-content:center;">
-        <span style="font-family:monospace; font-size:13px; color:#f0e5d1; background:#17100acc; padding:8px 14px;">map embed</span>
+      <div data-reveal="true" style="aspect-ratio:1; background:#3b2414;">
+        <div ref="{{ mapRef }}" style="width:100%; height:100%;"></div>
       </div>
     </div>
   </div>
@@ -133,12 +135,14 @@ a:hover { color: #7d8a4c; }
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 const DEFAULT_VISIT = {
-  address: '412 Maple Street, Portland, OR',
-  addressNote: 'Just past the hardware store, look for the crooked awning',
+  address: '3rd - 5th floor, Huda City Centre Metro Station, Gurugram, Haryana 122009',
+  addressNote: 'Above the HUDA City Centre metro station concourse',
   hoursWeekday: '7:00am – 4:00pm',
   hoursWeekend: '8:00am – 3:00pm',
   phone: '(503) 555-0142',
   email: 'hello@dumbbrew.example',
+  lat: 28.4595,
+  lng: 77.0722,
 };
 
 class Component extends DCLogic {
@@ -152,18 +156,44 @@ class Component extends DCLogic {
     if (this.hasGsap) window.gsap.registerPlugin(window.ScrollTrigger);
     this.attachReveal();
     this.attachNavScroll();
+    this.initMap();
     this.loadVisit();
   }
-  componentDidUpdate() { this.attachReveal(); }
+  componentDidUpdate() { this.attachReveal(); this.updateMap(); }
   loadVisit() {
-    window.supabaseSelect('visit_info', 'select=address,address_note,hours_weekday,hours_weekend,phone,email&limit=1')
+    window.supabaseSelect('visit_info', 'select=address,address_note,hours_weekday,hours_weekend,phone,email,lat,lng&limit=1')
       .then((rows) => {
         if (Array.isArray(rows) && rows[0]) {
           const v = rows[0];
-          this.setState({ visit: { address: v.address, addressNote: v.address_note, hoursWeekday: v.hours_weekday, hoursWeekend: v.hours_weekend, phone: v.phone, email: v.email } });
+          this.setState({
+            visit: {
+              address: v.address, addressNote: v.address_note, hoursWeekday: v.hours_weekday,
+              hoursWeekend: v.hours_weekend, phone: v.phone, email: v.email,
+              lat: v.lat != null ? Number(v.lat) : DEFAULT_VISIT.lat,
+              lng: v.lng != null ? Number(v.lng) : DEFAULT_VISIT.lng
+            }
+          });
         }
       })
       .catch((err) => console.warn('[dumbbrew] could not load visit info from Supabase, showing defaults:', err));
+  }
+  // Leaflet (https://leafletjs.com/) pinned to the storefront's exact
+  // coordinates — OpenStreetMap tiles need no API key, unlike Google Maps.
+  initMap() {
+    if (!this.mapNode || typeof window.L === 'undefined' || this.map) return;
+    const { lat, lng, address } = this.state.visit;
+    this.map = window.L.map(this.mapNode, { scrollWheelZoom: false }).setView([lat, lng], 16);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(this.map);
+    this.marker = window.L.marker([lat, lng]).addTo(this.map).bindPopup(address);
+  }
+  updateMap() {
+    if (!this.map || !this.marker) { this.initMap(); return; }
+    const { lat, lng, address } = this.state.visit;
+    this.map.setView([lat, lng], this.map.getZoom());
+    this.marker.setLatLng([lat, lng]).setPopupContent(address);
   }
   attachReveal() {
     const root = this.rootNode || document;
@@ -199,10 +229,12 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     if (this._triggers) this._triggers.forEach((st) => st && st.kill && st.kill());
+    if (this.map) { this.map.remove(); this.map = null; }
   }
   renderVals() {
     return {
       rootRef: (el) => { this.rootNode = el; },
+      mapRef: (el) => { this.mapNode = el; },
       logoUrl: window.assetUrl('db-logo.png'),
       visit: this.state.visit,
     };

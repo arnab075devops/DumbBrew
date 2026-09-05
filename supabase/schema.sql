@@ -87,6 +87,11 @@ create table if not exists visit_info (
   phone text,
   email text
 );
+-- Coordinates for the Leaflet map embed on visit.html (see its Leaflet
+-- usage at https://leafletjs.com/) — nullable so this stays safe to re-run
+-- against a row created before the map existed.
+alter table visit_info add column if not exists lat numeric;
+alter table visit_info add column if not exists lng numeric;
 
 create table if not exists newsletter_subscribers (
   id bigint generated always as identity primary key,
@@ -195,9 +200,18 @@ insert into testimonials (quote, name, sort) values
   ('Ordered ahead for the whole team and it was ready before we walked in.', 'Sam R.', 3)
 on conflict do nothing;
 
-insert into visit_info (address, address_note, hours_weekday, hours_weekend, phone, email)
-select '412 Maple Street, Portland, OR', 'Just past the hardware store, look for the crooked awning', '7:00am – 4:00pm', '8:00am – 3:00pm', '(503) 555-0142', 'hello@dumbbrew.example'
+insert into visit_info (address, address_note, hours_weekday, hours_weekend, phone, email, lat, lng)
+select '3rd - 5th floor, Huda City Centre Metro Station, Gurugram, Haryana 122009', 'Above the HUDA City Centre metro station concourse', '7:00am – 4:00pm', '8:00am – 3:00pm', '(503) 555-0142', 'hello@dumbbrew.example', 28.4595, 77.0722
 where not exists (select 1 from visit_info);
+
+-- The real storefront address — an UPDATE (not the seed-once INSERT above)
+-- so it also lands on whatever visit_info row already exists in a live
+-- database, not just a fresh one.
+update visit_info set
+  address = '3rd - 5th floor, Huda City Centre Metro Station, Gurugram, Haryana 122009',
+  address_note = 'Above the HUDA City Centre metro station concourse',
+  lat = 28.4595,
+  lng = 77.0722;
 
 -- --- Customer accounts (Authentik SSO, see docs/AUTHENTIK_SETUP.md) ---
 -- Identity/passwords live in Authentik, not here. This table only mirrors
@@ -306,7 +320,26 @@ alter table sellers add column if not exists pincode text;
 alter table sellers add column if not exists lat numeric;
 alter table sellers add column if not exists lng numeric;
 alter table sellers add column if not exists gst_number text;
-alter table sellers add column if not exists store_image_key text;
+
+-- Was a single store_image_key text column — sellers can now upload a
+-- gallery of cart/store photos, so it's an array. Backfill keeps any image
+-- an existing row already had before the column is dropped.
+alter table sellers add column if not exists store_image_keys text[] not null default '{}';
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_name = 'sellers' and column_name = 'store_image_key') then
+    update sellers set store_image_keys = array[store_image_key]
+      where store_image_key is not null and store_image_keys = '{}';
+    alter table sellers drop column store_image_key;
+  end if;
+end $$;
+
+-- Per-field admin verification, ticked off one field at a time while
+-- reviewing a pending application (see adminSellers.controller.ts) — approval
+-- is blocked until every applicable field is verified. Keyed by the same
+-- field ids the admin UI renders (store_name, owner_full_name, contact,
+-- address, description, gst_number, images).
+alter table sellers add column if not exists verified_fields jsonb not null default '{}'::jsonb;
 
 alter table sellers drop constraint if exists sellers_email_key;
 alter table sellers add constraint sellers_email_key unique (email);
@@ -559,3 +592,55 @@ alter table order_items drop constraint if exists order_items_fulfillment_status
 alter table order_items add constraint order_items_fulfillment_status_check
   check (fulfillment_status in ('unfulfilled', 'fulfilled'));
 alter table order_items add column if not exists fulfilled_at timestamptz;
+
+-- --- Reviews, seller reports, and admin notices ---
+-- All three tables follow the same no-RLS-write-policy pattern as sellers
+-- above: order-service is the only writer (service-role key) and does its
+-- own req.customerId/req.sellerId/req.admin scoping in code, so a policy
+-- keyed on auth.uid() would be dead code for a customer/seller table that's
+-- never queried with a customer/seller JWT directly from the browser.
+
+-- One rating per purchased line (order_item), not per product — so a repeat
+-- buyer can rate each purchase independently and a rating always ties back
+-- to a real, paid purchase rather than being product-wide and unverifiable.
+create table if not exists product_reviews (
+  id bigint generated always as identity primary key,
+  order_item_id bigint not null unique references order_items(id),
+  product_id bigint not null references products(id),
+  customer_id uuid not null references customers(id),
+  seller_id uuid not null references sellers(id),
+  rating int not null check (rating between 1 and 5),
+  comment text,
+  created_at timestamptz not null default now()
+);
+alter table product_reviews enable row level security;
+drop policy if exists "product_reviews public read" on product_reviews;
+create policy "product_reviews public read" on product_reviews for select using (true);
+
+-- A customer reporting a seller (optionally tied to a specific purchase).
+-- Reviewed by an admin, who can dismiss it or escalate it into a notice.
+create table if not exists seller_reports (
+  id bigint generated always as identity primary key,
+  seller_id uuid not null references sellers(id),
+  customer_id uuid not null references customers(id),
+  order_item_id bigint references order_items(id),
+  reason text not null,
+  status text not null default 'pending' check (status in ('pending', 'reviewed', 'dismissed')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by text
+);
+alter table seller_reports enable row level security;
+
+-- A warning sent to a seller after an admin has verified a report. Shown on
+-- the seller's own dashboard until they acknowledge it.
+create table if not exists seller_notices (
+  id bigint generated always as identity primary key,
+  seller_id uuid not null references sellers(id),
+  report_id bigint references seller_reports(id),
+  message text not null,
+  created_at timestamptz not null default now(),
+  created_by text,
+  acknowledged_at timestamptz
+);
+alter table seller_notices enable row level security;

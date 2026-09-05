@@ -12,7 +12,9 @@ import {
   updateMyCollection,
   deleteMyCollection,
   listMySales,
-  fulfillOrderItem
+  fulfillOrderItem,
+  listMyNotices,
+  acknowledgeNotice
 } from "../controllers/sellers.controller.js";
 
 // Everything here requires an approved seller's own JWT (see
@@ -36,4 +38,7 @@ export async function sellersRoutes(app: FastifyInstance) {
 
   app.get("/orders", listMySales);
   app.patch("/orders/:id/fulfill", fulfillOrderItem);
+
+  app.get("/notices", listMyNotices);
+  app.patch("/notices/:id/ack", acknowledgeNotice);
 }

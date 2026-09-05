@@ -46,6 +46,17 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
 .order-status.failed { background:#a13a2e22; color:#a13a2e; }
 .order-items { font-size:13px; color:#5a4128; margin-bottom:6px; }
 .order-total { font-weight:700; text-align:right; font-size:14px; }
+.order-item-line { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; flex-wrap:wrap; }
+.order-item-name { font-size:13px; color:#5a4128; }
+.order-item-actions { display:flex; align-items:center; gap:10px; }
+.stars { display:inline-flex; gap:2px; }
+.stars button { background:none; border:none; padding:0; font-size:16px; cursor:pointer; color:#3b241433; }
+.stars button.filled { color:#c99a54; }
+.stars.readonly button { cursor:default; }
+.report-link { font-size:12px; color:#a13a2e; background:none; border:none; cursor:pointer; padding:0; }
+.report-form { margin-top:8px; padding:12px; background:#3b241408; border-radius:8px; }
+.report-form textarea { min-height:60px; font-size:13px; }
+.report-form .row { display:flex; gap:10px; margin-top:8px; }
 .address-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:14px 0; border-top:1px solid #3b241418; font-size:14px; }
 .address-row:first-child { border-top:none; }
 .address-lines { line-height:1.5; }
@@ -233,6 +244,13 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
     return { created: 'Awaiting payment', paid: 'Paid', failed: 'Payment failed' }[status] || status;
   }
 
+  function starsHtml(itemId, rating, readonly) {
+    var stars = [1, 2, 3, 4, 5].map(function (n) {
+      return '<button type="button"' + (readonly ? ' disabled' : '') + ' data-star="' + n + '" class="' + (n <= rating ? 'filled' : '') + '">&#9733;</button>';
+    }).join('');
+    return '<span class="stars' + (readonly ? ' readonly' : '') + '" data-item-id="' + itemId + '">' + stars + '</span>';
+  }
+
   function loadOrders() {
     var el = document.getElementById('orders');
     if (!el) return;
@@ -244,9 +262,27 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
           return;
         }
         el.innerHTML = orders.map(function (o) {
-          var items = (o.order_items || []).map(function (it) {
-            return it.quantity + '&times; ' + escapeHtml(it.products ? it.products.name : 'Item');
-          }).join(', ');
+          var isPaid = o.payment_status === 'paid';
+          var itemsHtml = (o.order_items || []).map(function (it) {
+            var name = it.products ? it.products.name : 'Item';
+            // PostgREST embeds this as a single object, not an array —
+            // product_reviews.order_item_id is unique, so it detects a
+            // one-to-one relationship (unlike the one-to-many embeds above).
+            var review = Array.isArray(it.product_reviews) ? it.product_reviews[0] : it.product_reviews;
+            var ratingHtml = '';
+            var reportHtml = '';
+            if (isPaid) {
+              ratingHtml = review
+                ? starsHtml(it.id, review.rating, true)
+                : starsHtml(it.id, 0, false);
+              reportHtml = '<button type="button" class="report-link" data-report-item="' + it.id + '" data-seller-id="' + escapeHtml(it.seller_id || '') + '">Report seller</button>';
+            }
+            return '<div class="order-item-line" data-order-item-id="' + it.id + '">' +
+              '<span class="order-item-name">' + it.quantity + '&times; ' + escapeHtml(name) + '</span>' +
+              '<span class="order-item-actions">' + ratingHtml + reportHtml + '</span>' +
+            '</div>' +
+            '<div class="report-slot" data-report-slot="' + it.id + '"></div>';
+          }).join('');
           var date = new Date(o.created_at);
           return '<div class="order-row">' +
             '<div class="order-head">' +
@@ -254,10 +290,67 @@ button.link { background:none; border:none; color:#a13a2e; font-size:13px; curso
               '<span class="order-status ' + escapeHtml(o.payment_status) + '">' + escapeHtml(orderStatusLabel(o.payment_status)) + '</span>' +
             '</div>' +
             '<div class="order-date">' + (isNaN(date.getTime()) ? '' : date.toLocaleDateString()) + '</div>' +
-            '<div class="order-items">' + items + '</div>' +
+            '<div class="order-items">' + itemsHtml + '</div>' +
             '<div class="order-total">$' + Number(o.amount).toFixed(2) + '</div>' +
           '</div>';
         }).join('');
+
+        el.querySelectorAll('.stars:not(.readonly)').forEach(function (starEl) {
+          starEl.querySelectorAll('button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var itemId = Number(starEl.dataset.itemId);
+              var rating = Number(btn.dataset.star);
+              window.orderApiRequest('/api/reviews', {
+                method: 'POST',
+                body: JSON.stringify({ orderItemId: itemId, rating: rating })
+              }, accessToken)
+                .then(loadOrders)
+                .catch(function () { /* leave the widget as-is; the user can retry */ });
+            });
+          });
+        });
+
+        el.querySelectorAll('[data-report-item]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var itemId = btn.dataset.reportItem;
+            var sellerId = btn.dataset.sellerId;
+            var slot = el.querySelector('[data-report-slot="' + itemId + '"]');
+            if (!slot) return;
+            if (slot.innerHTML) { slot.innerHTML = ''; return; }
+            slot.innerHTML =
+              '<div class="report-form">' +
+                '<label style="margin-top:0;">Report this seller</label>' +
+                '<textarea placeholder="What went wrong?"></textarea>' +
+                '<div class="row">' +
+                  '<button class="secondary" type="button" data-submit-report>Submit</button>' +
+                  '<button class="link" type="button" data-cancel-report>Cancel</button>' +
+                '</div>' +
+                '<div class="msg" data-report-msg></div>' +
+              '</div>';
+            slot.querySelector('[data-cancel-report]').addEventListener('click', function () { slot.innerHTML = ''; });
+            slot.querySelector('[data-submit-report]').addEventListener('click', function () {
+              var textarea = slot.querySelector('textarea');
+              var reason = textarea.value.trim();
+              var msgEl = slot.querySelector('[data-report-msg]');
+              if (reason.length < 10) {
+                msgEl.className = 'msg err';
+                msgEl.textContent = 'Please describe the issue in at least 10 characters.';
+                return;
+              }
+              window.orderApiRequest('/api/reports', {
+                method: 'POST',
+                body: JSON.stringify({ sellerId: sellerId, orderItemId: Number(itemId), reason: reason })
+              }, accessToken)
+                .then(function () {
+                  slot.innerHTML = '<div class="msg ok">Thanks — our team will review this.</div>';
+                })
+                .catch(function () {
+                  msgEl.className = 'msg err';
+                  msgEl.textContent = 'Could not submit your report right now.';
+                });
+            });
+          });
+        });
       })
       .catch(function () {
         el.innerHTML = '<div class="sub">Couldn\'t load your orders right now.</div>';
