@@ -49,8 +49,7 @@ All pages live in `backend/gateway/public/`. **No build step, no framework, no s
 
 | Page | Talks to | Notes |
 |---|---|---|
-| `admin-sellers.html` | `order-service` `POST /api/auth/login` (admin) then `/api/admin/sellers` | Seller application approval queue. Note: admin login itself goes through `auth-service` (port 4001 behind `/api/auth`), then all seller-decision calls go through `order-service` (`/api/admin/sellers`) — two different services, same admin JWT. |
-| `admin-tutorials.html` | `order-service` `POST /api/auth/login` (admin) then `/api/admin/tutorials` | List/create/edit/delete tutorials, Quill rich-text editor for `body_html`, thumbnail upload via presigned R2 URL (separate `R2_TUTORIALS` bucket, see [[config.js Reference]]). Same two-service admin-login pattern as `admin-sellers.html`. See [[API Endpoint Map]] for the route table. |
+| `admin-sellers.html` | `order-service` `POST /api/auth/login` (admin) then `/api/admin/sellers`, `/api/admin/reports`, `/api/admin/visit-info`, `/api/admin/tutorials` | Single admin dashboard, tabbed (Applications / Reports / Storefront / Tutorials — client-side tabs via `currentView`, one `#view-body` container, no page navigation). Tutorials tab: list/create/edit/delete, Quill rich-text editor for `body_html`, thumbnail upload via presigned R2 URL (separate `R2_TUTORIALS` bucket, see [[config.js Reference]]). The old standalone `admin-tutorials.html` was merged into this file and removed. Note: admin login itself goes through `auth-service` (port 4001 behind `/api/auth`), then all admin-decision calls go through `order-service` — two different services, same admin JWT. See [[API Endpoint Map]] for the route table. |
 
 ## Shared runtime
 

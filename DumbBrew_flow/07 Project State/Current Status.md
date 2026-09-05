@@ -32,7 +32,8 @@ This note exists so Claude doesn't have to re-read all of `CONTEXT.md` just to g
   recipe/how-to articles — `tutorials` Supabase table, `order-service`'s
   `/api/admin/tutorials` CRUD (`adminTutorials.controller.ts`), public
   `tutorials.html`/`tutorial.html` (read Supabase directly, published-only),
-  and `admin-tutorials.html` (Quill editor). Uses its own R2 bucket
+  and a Tutorials tab inside `admin-sellers.html` (Quill editor; the old
+  standalone `admin-tutorials.html` was merged in and removed). Uses its own R2 bucket
   (`R2_TUTORIALS_BASE`/`R2_TUTORIALS_BUCKET`), separate from the main asset
   bucket. See [[Frontend Pages]], [[API Endpoint Map]], [[Supabase Schema]].
   The same `2ae407d` commit also added a `wishlist` feature and touched

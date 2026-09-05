@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.snow.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.min.js"></script>
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
 .wrap { max-width:760px; margin:0 auto; padding:100px 24px 120px; }
@@ -75,6 +77,32 @@ input[type="text"]:focus { border-color:#c99a54; }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .visit-map { height:280px; border-radius:8px; margin-top:16px; }
 .coords-note { font-size:12px; color:#5a412899; margin-top:6px; }
+textarea { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #3b241422; border-radius:6px; background:#fff; font-size:14px; font-family:'Poppins',sans-serif; color:#241a10; outline:none; min-height:70px; resize:vertical; }
+textarea:focus { border-color:#c99a54; }
+.field-note { font-size:12px; color:#5a412888; margin-top:6px; }
+button.secondary { padding:13px 24px; background:#fff; color:#17100a; border:1px solid #3b241433; border-radius:1px; font-weight:600; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; margin-top:18px; margin-left:10px; }
+.top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.tutorial-row { padding:18px 0; border-top:1px solid #3b241418; display:flex; gap:14px; align-items:center; }
+.tutorial-row:first-child { border-top:none; }
+.tutorial-thumb { width:60px; height:60px; border-radius:8px; object-fit:cover; background:#3b241411; flex-shrink:0; }
+.tutorial-body { flex:1; min-width:0; }
+.tutorial-title { font-weight:600; font-size:15px; }
+.tutorial-meta { font-size:12px; color:#5a412899; margin-top:2px; }
+.badge { font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 8px; border-radius:10px; margin-left:8px; }
+.badge.draft { background:#c99a5433; color:#8a5527; }
+.badge.published { background:#7d8a4c22; color:#5a7d3c; }
+.row-actions { display:flex; gap:8px; }
+.row-actions button { padding:7px 14px; border-radius:1px; border:1px solid #3b241433; background:#fff; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
+.row-actions .danger { color:#a13a2e; border-color:#a13a2e55; }
+.thumb-picker { display:flex; align-items:center; gap:14px; margin-top:8px; }
+.thumb-preview { width:90px; height:90px; border-radius:8px; object-fit:cover; background:#3b241411; flex-shrink:0; }
+.thumb-preview.empty { display:flex; align-items:center; justify-content:center; font-size:11px; color:#5a412888; }
+#editor-container { background:#fff; border:1px solid #3b241422; border-radius:6px; margin-top:20px; }
+.ql-toolbar.ql-snow { border:none; border-bottom:1px solid #3b241422; border-radius:6px 6px 0 0; }
+.ql-container.ql-snow { border:none; font-size:15px; font-family:'Poppins',sans-serif; min-height:360px; }
+.publish-row { display:flex; align-items:center; gap:12px; margin-top:24px; }
+.publish-row label { display:flex; align-items:center; gap:8px; margin:0; text-transform:none; font-size:13px; font-weight:500; letter-spacing:normal; color:#241a10; }
+.publish-row input[type="checkbox"] { width:16px; height:16px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -88,6 +116,10 @@ input[type="text"]:focus { border-color:#c99a54; }
   let currentStatus = 'pending';
   let currentView = 'applications';
   let currentReportStatus = 'pending';
+  let tutorialsMode = 'list';
+  let tutorialsEditing = null;
+  let tutorialsQuill = null;
+  let currentThumbnailKey = null;
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -147,11 +179,10 @@ input[type="text"]:focus { border-color:#c99a54; }
     contentEl.innerHTML =
       '<div id="credential-slot"></div>' +
       '<div class="view-tabs">' +
-        [['applications', 'Applications'], ['reports', 'Reports'], ['storefront', 'Storefront']].map(function (v) {
+        [['applications', 'Applications'], ['reports', 'Reports'], ['storefront', 'Storefront'], ['tutorials', 'Tutorials']].map(function (v) {
           return '<button type="button" class="view-tab' + (v[0] === currentView ? ' active' : '') + '" data-view="' + v[0] + '">' + v[1] + '</button>';
         }).join('') +
-        '<a class="link" href="./admin-tutorials.html" style="margin-left:auto; text-decoration:none;">Tutorials</a>' +
-        '<button class="link" id="btn-logout">Sign Out</button>' +
+        '<button class="link" id="btn-logout" style="margin-left:auto;">Sign Out</button>' +
       '</div>' +
       '<div id="view-body"></div>';
 
@@ -169,6 +200,7 @@ input[type="text"]:focus { border-color:#c99a54; }
 
     if (currentView === 'reports') renderReportsBody();
     else if (currentView === 'storefront') renderStorefrontBody();
+    else if (currentView === 'tutorials') renderTutorialsBody();
     else renderApplicationsBody();
   }
 
@@ -599,6 +631,219 @@ input[type="text"]:focus { border-color:#c99a54; }
         .catch(function () {
           btn.disabled = false;
           msgEl.innerHTML = '<div class="msg err">Could not save right now.</div>';
+        });
+    });
+  }
+
+  // --- Tutorials (recipe & brewing how-tos shown on the public site) ---
+
+  function tutorialsApi(path, init) {
+    return window.orderApiRequest(path, init || {}, adminToken).catch(function (err) {
+      if (err && (err.status === 401 || err.status === 403)) {
+        sessionStorage.removeItem('dumbbrew_admin_access_token');
+        adminToken = null;
+        renderLogin('Your session expired — please sign in again.');
+      }
+      throw err;
+    });
+  }
+
+  function slugPreview(title) {
+    return String(title || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
+  }
+
+  function renderTutorialsBody() {
+    if (tutorialsMode === 'editor') renderTutorialsEditor(tutorialsEditing);
+    else renderTutorialsList();
+  }
+
+  function renderTutorialsList() {
+    document.getElementById('view-body').innerHTML =
+      '<div class="card">' +
+        '<div class="top-row"><h1>Tutorials</h1><button class="primary" id="btn-new-tutorial">New Tutorial</button></div>' +
+        '<div class="sub" style="margin-bottom:10px;">Recipe &amp; brewing how-tos shown on the public site</div>' +
+        '<div id="tutorials-list">Loading&hellip;</div>' +
+      '</div>';
+
+    document.getElementById('btn-new-tutorial').addEventListener('click', function () {
+      tutorialsMode = 'editor';
+      tutorialsEditing = null;
+      renderTutorialsBody();
+    });
+
+    loadTutorialsList();
+  }
+
+  function loadTutorialsList() {
+    const listEl = document.getElementById('tutorials-list');
+    tutorialsApi('/api/admin/tutorials').then(function (data) {
+      const tutorials = (data && data.tutorials) || [];
+      if (!tutorials.length) {
+        listEl.innerHTML = '<div class="sub" style="padding:20px 0;">No tutorials yet.</div>';
+        return;
+      }
+      listEl.innerHTML = tutorials.map(function (t) {
+        return '<div class="tutorial-row" data-id="' + t.id + '">' +
+          (t.thumbnail_key
+            ? '<img class="tutorial-thumb" src="' + escapeHtml(window.tutorialAssetUrl(t.thumbnail_key)) + '"/>'
+            : '<div class="tutorial-thumb"></div>') +
+          '<div class="tutorial-body">' +
+            '<div class="tutorial-title">' + escapeHtml(t.title) +
+              '<span class="badge ' + (t.published ? 'published' : 'draft') + '">' + (t.published ? 'Published' : 'Draft') + '</span>' +
+            '</div>' +
+            '<div class="tutorial-meta">' + escapeHtml(t.category || 'Uncategorized') + ' &middot; /' + escapeHtml(t.slug) + '</div>' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<button type="button" data-edit="' + t.id + '">Edit</button>' +
+            '<button type="button" class="danger" data-del="' + t.id + '">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      listEl.querySelectorAll('[data-edit]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          tutorialsMode = 'editor';
+          tutorialsEditing = tutorials.find(function (t) { return String(t.id) === btn.dataset.edit; });
+          renderTutorialsBody();
+        });
+      });
+      listEl.querySelectorAll('[data-del]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!confirm('Delete this tutorial? This cannot be undone.')) return;
+          tutorialsApi('/api/admin/tutorials/' + btn.dataset.del, { method: 'DELETE' }).then(loadTutorialsList);
+        });
+      });
+    }).catch(function () {
+      listEl.innerHTML = '<div class="msg err">Could not load tutorials.</div>';
+    });
+  }
+
+  function uploadTutorialFile(file) {
+    return tutorialsApi('/api/admin/tutorials/presign-upload', {
+      method: 'POST',
+      body: JSON.stringify({ fileName: file.name, contentType: file.type })
+    }).then(function (data) {
+      return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+        .then(function () { return { imageKey: data.imageKey, url: window.tutorialAssetUrl(data.imageKey) }; });
+    });
+  }
+
+  function renderTutorialsEditor(existing) {
+    currentThumbnailKey = existing ? existing.thumbnail_key : null;
+    document.getElementById('view-body').innerHTML =
+      '<div class="card">' +
+        '<div class="top-row"><h1>' + (existing ? 'Edit Tutorial' : 'New Tutorial') + '</h1><button class="link" id="btn-tutorials-back">&larr; Back to list</button></div>' +
+        '<div class="sub" style="margin-bottom:10px;">Write it like an article — add photos and a video wherever they help.</div>' +
+        '<label for="ef-title">Title</label><input type="text" id="ef-title" value="' + escapeHtml(existing ? existing.title : '') + '"/>' +
+        '<div class="field-note">Slug: <span id="slug-preview">' + escapeHtml(existing ? existing.slug : '') + '</span></div>' +
+        '<div class="two-col">' +
+          '<div><label for="ef-category">Category</label><input type="text" id="ef-category" placeholder="e.g. Pour Over" value="' + escapeHtml(existing ? (existing.category || '') : '') + '"/></div>' +
+          '<div><label for="ef-video">Hero video URL (optional)</label><input type="text" id="ef-video" placeholder="https://youtube.com/watch?v=..." value="' + escapeHtml(existing ? (existing.video_url || '') : '') + '"/></div>' +
+        '</div>' +
+        '<label for="ef-excerpt">Excerpt</label><textarea id="ef-excerpt">' + escapeHtml(existing ? existing.excerpt : '') + '</textarea>' +
+        '<label>Thumbnail</label>' +
+        '<div class="thumb-picker">' +
+          (currentThumbnailKey
+            ? '<img class="thumb-preview" id="thumb-preview" src="' + escapeHtml(window.tutorialAssetUrl(currentThumbnailKey)) + '"/>'
+            : '<div class="thumb-preview empty" id="thumb-preview">No image</div>') +
+          '<input type="file" id="ef-thumb-file" accept="image/png,image/jpeg,image/webp"/>' +
+        '</div>' +
+        '<label>Article body</label>' +
+        '<div id="editor-container"></div>' +
+        '<div class="publish-row">' +
+          '<label><input type="checkbox" id="ef-published" ' + (existing && existing.published ? 'checked' : '') + '/> Published (visible on the public site)</label>' +
+        '</div>' +
+        '<button class="primary" id="btn-save-tutorial">Save</button>' +
+        '<button class="secondary" id="btn-cancel-tutorial">Cancel</button>' +
+        '<div id="tutorial-editor-msg"></div>' +
+      '</div>';
+
+    function backToList() {
+      tutorialsMode = 'list';
+      tutorialsEditing = null;
+      renderTutorialsBody();
+    }
+    document.getElementById('btn-tutorials-back').addEventListener('click', backToList);
+    document.getElementById('btn-cancel-tutorial').addEventListener('click', backToList);
+    document.getElementById('ef-title').addEventListener('input', function (ev) {
+      document.getElementById('slug-preview').textContent = slugPreview(ev.target.value);
+    });
+    document.getElementById('ef-thumb-file').addEventListener('change', function (ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById('thumb-preview');
+      preview.textContent = 'Uploading…';
+      uploadTutorialFile(file).then(function (res) {
+        currentThumbnailKey = res.imageKey;
+        const img = document.createElement('img');
+        img.className = 'thumb-preview';
+        img.id = 'thumb-preview';
+        img.src = res.url;
+        preview.replaceWith(img);
+      }).catch(function () {
+        preview.textContent = 'Upload failed';
+      });
+    });
+
+    tutorialsQuill = new Quill('#editor-container', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'image', 'video'],
+          ['clean']
+        ]
+      }
+    });
+    if (existing && existing.body_html) tutorialsQuill.root.innerHTML = existing.body_html;
+
+    // Quill's default image handler base64-embeds the file inline — replace
+    // it so images upload to R2 (like the thumbnail) and only the resulting
+    // public URL lands in the stored HTML.
+    tutorialsQuill.getModule('toolbar').addHandler('image', function () {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/png,image/jpeg,image/webp');
+      input.click();
+      input.onchange = function () {
+        const file = input.files[0];
+        if (!file) return;
+        const range = tutorialsQuill.getSelection(true);
+        uploadTutorialFile(file).then(function (res) {
+          tutorialsQuill.insertEmbed(range.index, 'image', res.url, 'user');
+          tutorialsQuill.setSelection(range.index + 1);
+        }).catch(function () {
+          alert('Image upload failed.');
+        });
+      };
+    });
+
+    document.getElementById('btn-save-tutorial').addEventListener('click', function () {
+      const btn = document.getElementById('btn-save-tutorial');
+      const msgEl = document.getElementById('tutorial-editor-msg');
+      const title = document.getElementById('ef-title').value.trim();
+      if (!title) { msgEl.innerHTML = '<div class="msg err">Title is required.</div>'; return; }
+      btn.disabled = true;
+      msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
+      const payload = {
+        title: title,
+        category: document.getElementById('ef-category').value.trim() || undefined,
+        videoUrl: document.getElementById('ef-video').value.trim() || undefined,
+        excerpt: document.getElementById('ef-excerpt').value.trim(),
+        thumbnailKey: currentThumbnailKey || undefined,
+        bodyHtml: tutorialsQuill.root.innerHTML,
+        published: document.getElementById('ef-published').checked
+      };
+      const req = existing
+        ? tutorialsApi('/api/admin/tutorials/' + existing.id, { method: 'PATCH', body: JSON.stringify(payload) })
+        : tutorialsApi('/api/admin/tutorials', { method: 'POST', body: JSON.stringify(payload) });
+      req.then(backToList)
+        .catch(function (err) {
+          btn.disabled = false;
+          const reason = err && err.body && err.body.error === 'slug_taken' ? 'That title produces a slug already in use — try a different title.' : 'Could not save.';
+          msgEl.innerHTML = '<div class="msg err">' + reason + '</div>';
         });
     });
   }

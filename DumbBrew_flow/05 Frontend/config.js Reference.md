@@ -25,7 +25,7 @@ Parent: [[Home]] · See also: [[Frontend Pages]], [[gateway]], [[Auth Identity S
 | Function | Used for |
 |---|---|
 | `assetUrl(name)` | `R2_BASE + '/' + name` if set, else `./assets/' + name`. Every `image_key` column in Supabase stores just a filename — this is what turns it into a full URL. |
-| `tutorialAssetUrl(imageKey)` | Same idea as `assetUrl`, but against `R2_TUTORIALS_BASE` — used by `tutorials.html`/`tutorial.html`/`admin-tutorials.html` for thumbnails and inline article images. |
+| `tutorialAssetUrl(imageKey)` | Same idea as `assetUrl`, but against `R2_TUTORIALS_BASE` — used by `tutorials.html`/`tutorial.html`/`admin-sellers.html`'s Tutorials tab for thumbnails and inline article images. |
 | `supabaseSelect(table, query)` | Anonymous read from Supabase PostgREST. Used by every marketing page and by `shop.html`'s public catalog. |
 | `supabaseSelectAs(table, query, accessToken)` | Authenticated read — `accessToken` is the customer session JWT `auth-service` minted (see [[Auth Identity Systems]] §2), sent as the `Authorization` bearer while `apikey` stays the anon key (Supabase requires it on every REST call regardless). This is what makes `auth.uid()` resolve in RLS. |
 | `supabaseUpdateAs(table, matchQuery, patch, accessToken)` | Authenticated PATCH — e.g. `account.html` editing the signed-in customer's own `status`. `matchQuery` should pin the row explicitly (RLS would block a mismatched row anyway, but this avoids relying on "no filter = every visible row" PostgREST behavior). |
