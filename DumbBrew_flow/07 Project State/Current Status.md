@@ -28,6 +28,20 @@ This note exists so Claude doesn't have to re-read all of `CONTEXT.md` just to g
   re-reads the new controllers/schema.
 - **Grafana** is on `http://localhost:3000` (bound to `127.0.0.1:3000` in
   `docker-compose.yml`), not `3001` as this note previously said.
+- **Tutorials feature (`2ae407d`, `4aa19f5`, 2026-09-06)**: admin-authored
+  recipe/how-to articles — `tutorials` Supabase table, `order-service`'s
+  `/api/admin/tutorials` CRUD (`adminTutorials.controller.ts`), public
+  `tutorials.html`/`tutorial.html` (read Supabase directly, published-only),
+  and `admin-tutorials.html` (Quill editor). Uses its own R2 bucket
+  (`R2_TUTORIALS_BASE`/`R2_TUTORIALS_BUCKET`), separate from the main asset
+  bucket. See [[Frontend Pages]], [[API Endpoint Map]], [[Supabase Schema]].
+  The same `2ae407d` commit also added a `wishlist` feature and touched
+  `products.controller.ts` — **not yet reflected** in the vault, out of scope
+  for this update. A follow-up commit (`4aa19f5`) fixed a real nav bug this
+  introduced: adding the Tutorials link broke unrelated nav items
+  intermittently because `auth-nav.js`/`search.js` were detaching/reparenting
+  DOM nodes the site's `DCLogic`/React runtime still owned — see the gotcha
+  note in [[Frontend Pages]] before writing any future nav-injecting script.
 
 ## What's live and verified (as of the last CONTEXT.md update)
 

@@ -21,6 +21,12 @@ Source of truth: `supabase/schema.sql` — idempotent, `CREATE TABLE IF NOT EXIS
 
 `image_key` columns store just the R2 object filename (e.g. `brew-regular.jpg`), never a full URL — `assetUrl()` in `config.js` builds the URL at render time so switching R2 buckets/domains needs no data migration.
 
+## Admin-authored content
+
+| Table | Key columns | RLS | Notes |
+|---|---|---|---|
+| `tutorials` | `slug` (unique), `title`, `excerpt`, `category`, `thumbnail_key`, `video_url`, `body_html`, `published`, `published_at` | `select`: `published=true` only. **No insert/update/delete policy** — writes only via `order-service`'s `/api/admin/tutorials` routes (service-role key, `requireAdmin`), same model as `visit_info`. | The site's "Tutorials" section (recipe/how-to articles). `body_html` is authored via Quill in `admin-tutorials.html` and rendered with raw `innerHTML` on `tutorial.html` — trusted content only (admin-authored), not sanitized against arbitrary HTML. `thumbnail_key` resolves through the **separate** `R2_TUTORIALS_BASE` bucket, not `assetUrl`'s `R2_BASE` — see [[config.js Reference]]. |
+
 ## Customer accounts
 
 | Table/View | Key columns | RLS |

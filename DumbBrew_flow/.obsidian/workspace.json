@@ -183,6 +183,9 @@
   },
   "active": "3ac58c850d3f5734",
   "lastOpenFiles": [
+    "07 Project State/Current Status.md.tmp.23636.63b61cd87a57",
+    "03 API Reference/API Endpoint Map.md.tmp.23636.95cb10fcf967",
+    "05 Frontend/Frontend Pages.md.tmp.23636.493b1b9bafdf",
     "07 Project State/Known Gaps.md",
     "Untitled.base",
     "2026-09-06.md",
@@ -204,8 +207,6 @@
     "07 Project State/Current Status.md.tmp.9500.ec6336d67bd2",
     "01 Architecture/Repo Map.md.tmp.9500.62be24fdaf54",
     "Glossary.md.tmp.9500.e0ab3dd98ff5",
-    "05 Frontend/Frontend Pages.md.tmp.9500.c8215ccd2c97",
-    "07 Project State/Known Gaps.md.tmp.9500.dd453ee6f031",
     "06 Infra and Deploy/Monitoring.md",
     "06 Infra and Deploy/Vercel Deploy.md",
     "06 Infra and Deploy/Terraform OCI.md",

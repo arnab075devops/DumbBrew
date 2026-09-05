@@ -35,7 +35,10 @@ Source: `backend/services/content-service/src/routes/`, `controllers/`. **Legacy
 | GET | `/api/newsletter/subscribers` | admin | `listSubscribers` | Paginated. |
 | DELETE | `/api/newsletter/subscribers/:id` | admin | `deleteSubscriber` | |
 
-## order-service (`/api/cart`, `/api/addresses`, `/api/orders`, `/api/payments`, `/api/sellers`, `/api/admin/sellers`) — port 4003
+## order-service (`/api/cart`, `/api/addresses`, `/api/orders`, `/api/payments`, `/api/sellers`, `/api/admin/sellers`, `/api/admin/tutorials`) — port 4003
+
+> [!note] Not yet documented here
+> A `wishlist`/`/api/wishlist` feature and product-catalog changes landed in the same commit as tutorials (`2ae407d`, 2026-09-06) but are out of scope for this update — see `wishlist.controller.ts`/`wishlist.routes.ts` and `products.controller.ts` if you need current behavior there.
 
 Source: `backend/services/order-service/src/routes/`, `controllers/`. Talks to **Supabase only** (service-role key), no local Postgres dependency.
 
@@ -105,6 +108,19 @@ Source: `backend/services/order-service/src/routes/`, `controllers/`. Talks to *
 |---|---|---|---|
 | GET | `/api/admin/sellers?status=pending` | `listSellers` | Defaults to `pending`; also accepts `approved`/`rejected`. |
 | PATCH | `/api/admin/sellers/:id` | `decideSeller` | `{status:'approved'}` generates+hashes a temp password and returns it **once**, plaintext, in this response only — never retrievable again. `{status:'rejected'}` just sets status. |
+
+### Admin tutorials (`adminTutorials.routes.ts`) — all require **admin**
+
+| Method | Path | Controller | Notes |
+|---|---|---|---|
+| GET | `/api/admin/tutorials` | `listTutorials` | |
+| GET | `/api/admin/tutorials/:id` | `getTutorial` | |
+| POST | `/api/admin/tutorials` | `createTutorial` | |
+| PATCH | `/api/admin/tutorials/:id` | `updateTutorial` | |
+| DELETE | `/api/admin/tutorials/:id` | `deleteTutorial` | |
+| POST | `/api/admin/tutorials/presign-upload` | `presignTutorialUpload` | Presigned R2 PUT for thumbnails, in the separate `R2_TUTORIALS` bucket (not the shared product/seller-photo bucket) — see [[config.js Reference]]. |
+
+Public read of published tutorials bypasses `order-service` entirely — `tutorials.html`/`tutorial.html` read the `tutorials` Supabase table directly with the anon key (RLS: `published=true` only), same pattern as `shop.html`'s product catalog. See [[Frontend Pages]].
 
 ## Non-`/api` routes
 

@@ -15,6 +15,7 @@ Parent: [[Home]] · See also: [[Frontend Pages]], [[gateway]], [[Auth Identity S
 |---|---|
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Supabase project + public anon key. The anon key is meant to be public — access is enforced by RLS in `supabase/schema.sql`, not by hiding the key. |
 | `R2_BASE` | Cloudflare R2 public bucket base URL, no trailing slash. Empty string (`''`) falls back to `./assets/` (checked-in local images). |
+| `R2_TUTORIALS_BASE` | A **separate** R2 bucket's public URL, used only for tutorial thumbnails/inline images (backend env var `R2_TUTORIALS_BUCKET`, see `order-service`'s `config.ts`). No local-fallback behavior like `R2_BASE` — tutorial images only ever come from an admin upload. |
 | `API_BASE` | The gateway origin (nginx + the three Fastify services). Only things that need a trusted server go through this — customer registration/session, cart/checkout/payments, seller/admin flows. |
 | `AUTHENTIK_URL`, `AUTHENTIK_CLIENT_ID`, `AUTHENTIK_REDIRECT_URI` | Customer SSO — see [[Auth Identity Systems]] §2. `AUTHENTIK_REDIRECT_URI` is computed as `window.location.origin + '/auth-callback.html'`, not hardcoded, so it works across environments without editing. |
 | `TERMS_VERSION` | Must exactly match `auth-service`'s `TERMS_VERSION` env var — registration 400s (`stale_terms_version`) otherwise. Bump both together whenever `terms.html`/`data-policy.html` materially change. |
@@ -24,6 +25,7 @@ Parent: [[Home]] · See also: [[Frontend Pages]], [[gateway]], [[Auth Identity S
 | Function | Used for |
 |---|---|
 | `assetUrl(name)` | `R2_BASE + '/' + name` if set, else `./assets/' + name`. Every `image_key` column in Supabase stores just a filename — this is what turns it into a full URL. |
+| `tutorialAssetUrl(imageKey)` | Same idea as `assetUrl`, but against `R2_TUTORIALS_BASE` — used by `tutorials.html`/`tutorial.html`/`admin-tutorials.html` for thumbnails and inline article images. |
 | `supabaseSelect(table, query)` | Anonymous read from Supabase PostgREST. Used by every marketing page and by `shop.html`'s public catalog. |
 | `supabaseSelectAs(table, query, accessToken)` | Authenticated read — `accessToken` is the customer session JWT `auth-service` minted (see [[Auth Identity Systems]] §2), sent as the `Authorization` bearer while `apikey` stays the anon key (Supabase requires it on every REST call regardless). This is what makes `auth.uid()` resolve in RLS. |
 | `supabaseUpdateAs(table, matchQuery, patch, accessToken)` | Authenticated PATCH — e.g. `account.html` editing the signed-in customer's own `status`. `matchQuery` should pin the row explicitly (RLS would block a mismatched row anyway, but this avoids relying on "no filter = every visible row" PostgREST behavior). |

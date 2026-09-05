@@ -16,6 +16,8 @@ All pages live in `backend/gateway/public/`. **No build step, no framework, no s
 | `story.html` | `story`, `story_milestones` | |
 | `gallery.html` | `brew_methods` | One card per brew method. |
 | `visit.html` | `visit_info` | Hours/address/parking/wifi/groups. |
+| `tutorials.html` | `tutorials` (published only) | Grid/listing page, category filter client-side. |
+| `tutorial.html` | `tutorials` (`?slug=`, published only) | Single article; renders `body_html` (Quill-authored) directly into the DOM via `innerHTML`. Thumbnails/inline images resolve through `window.tutorialAssetUrl`, a **separate** R2 bucket from `assetUrl`'s (see [[config.js Reference]]). |
 
 ## Customer auth & profile
 
@@ -48,7 +50,13 @@ All pages live in `backend/gateway/public/`. **No build step, no framework, no s
 | Page | Talks to | Notes |
 |---|---|---|
 | `admin-sellers.html` | `order-service` `POST /api/auth/login` (admin) then `/api/admin/sellers` | Seller application approval queue. Note: admin login itself goes through `auth-service` (port 4001 behind `/api/auth`), then all seller-decision calls go through `order-service` (`/api/admin/sellers`) — two different services, same admin JWT. |
+| `admin-tutorials.html` | `order-service` `POST /api/auth/login` (admin) then `/api/admin/tutorials` | List/create/edit/delete tutorials, Quill rich-text editor for `body_html`, thumbnail upload via presigned R2 URL (separate `R2_TUTORIALS` bucket, see [[config.js Reference]]). Same two-service admin-login pattern as `admin-sellers.html`. See [[API Endpoint Map]] for the route table. |
 
 ## Shared runtime
 
 `config.js` (see [[config.js Reference]]) is loaded by every page and provides `window.APP_CONFIG` plus the `supabaseSelect`/`supabaseSelectAs`/`supabaseUpdateAs`/`assetUrl` helper functions every page's inline script calls.
+
+### ⚠ Gotcha: don't detach/reparent nodes the `DCLogic`/React runtime owns
+
+`auth-nav.js` (injects the login/avatar swap) and `search.js` (the nav search panel) both learned this the hard way (fixed 2026-09-06, see commit `4aa19f5`): every page's nav is owned by the `DCLogic`/React component runtime (`support.js`), which re-renders on `boot()`'s async `fetch(location.href) → updateHtml()` cycle on every navigation. A helper script that calls `node.replaceWith(...)` or reparents/wraps a node React still holds a reference to (e.g. wrapping a button in a new positioning `<span>`) leaves React holding a stale reference; the next re-render's reconciliation can then fail and abort mid-commit, leaving **unrelated sibling nav items** (the Tutorials link, in the bug that prompted this) in a half-updated/broken state — the failure isn't scoped to the node you touched.
+**Fix pattern**: never move or replace a node the runtime rendered. Hide with `style.display='none'` instead of `replaceWith()`/removal (React never wrote that property, so it won't diff it back); for floating UI (dropdowns/panels), append to `document.body` and position with `getBoundingClientRect()` + `position:fixed`, recomputed on scroll/resize, instead of wrapping the anchor element. Apply this pattern to any future nav-injecting script.
