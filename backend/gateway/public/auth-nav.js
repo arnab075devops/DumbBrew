@@ -47,6 +47,15 @@
     return btn;
   }
 
+  // Hides the original "Log In" link rather than removing/replacing it —
+  // replaceWith() detaches a node dc-runtime's React still owns, and
+  // boot()'s later async re-render (fetch(location.href) -> updateHtml())
+  // then fails to reconcile that stale reference. That failure can abort
+  // React's commit mid-pass and leave unrelated nav siblings (e.g. the
+  // Tutorials tab) in a half-updated state. Hiding via style.display
+  // keeps the node attached and untouched by React (which never wrote
+  // that property, so it never diffs it back), so the badge shown next
+  // to it is purely additive.
   function swapToAvatar(link, me) {
     const badge = document.createElement('a');
     badge.href = './account.html';
@@ -56,7 +65,8 @@
       'border-radius:50%; background:#8a5527; color:#f0e5d1; font-family:Poppins,sans-serif; ' +
       'font-size:12px; font-weight:600; letter-spacing:0.5px; text-decoration:none; flex:none;';
     badge.textContent = initials(me.full_name || me.username);
-    link.replaceWith(badge);
+    link.insertAdjacentElement('afterend', badge);
+    link.style.display = 'none';
   }
 
   function tryInit(attemptsLeft) {

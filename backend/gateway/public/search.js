@@ -26,9 +26,15 @@
 
     const panel = document.createElement('div');
     panel.style.cssText =
-      'position:absolute; top:calc(100% + 10px); right:0; width:320px; max-height:420px; overflow-y:auto; ' +
+      'position:fixed; width:320px; max-height:420px; overflow-y:auto; ' +
       'background:#faf5ea; border-radius:10px; box-shadow:0 8px 28px #17100a33; display:none; z-index:50; ' +
       'font-family:Poppins,sans-serif;';
+
+    function positionPanel() {
+      const rect = btn.getBoundingClientRect();
+      panel.style.top = (rect.bottom + 10) + 'px';
+      panel.style.right = (window.innerWidth - rect.right) + 'px';
+    }
 
     const inputWrap = document.createElement('div');
     inputWrap.style.cssText = 'padding:12px;';
@@ -46,21 +52,24 @@
     panel.appendChild(inputWrap);
     panel.appendChild(resultsEl);
 
-    // Wrap the button in its own positioning context rather than reusing its
-    // parent (the whole nav-links row) — anchoring to that would place the
-    // panel relative to the entire row instead of under the icon itself.
-    const wrapper = document.createElement('span');
-    wrapper.style.cssText = 'position:relative; display:inline-flex;';
-    btn.parentElement.insertBefore(wrapper, btn);
-    wrapper.appendChild(btn);
-    wrapper.appendChild(panel);
+    // Appended to <body> rather than anchored inside the nav — reparenting
+    // or wrapping the button itself would move a node dc-runtime's React
+    // owns, and the next re-render (boot() re-fetches and re-renders on
+    // every navigation) can then desync React's reconciliation and drop
+    // unrelated sibling nav items. Position is computed from the button's
+    // own rect instead, so the button is never touched.
+    document.body.appendChild(panel);
 
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       open = !open;
+      if (open) positionPanel();
       panel.style.display = open ? 'block' : 'none';
       if (open) input.focus();
     });
+
+    window.addEventListener('scroll', function () { if (open) positionPanel(); }, true);
+    window.addEventListener('resize', function () { if (open) positionPanel(); });
 
     document.addEventListener('click', function (e) {
       if (open && !panel.contains(e.target) && e.target !== btn) {
