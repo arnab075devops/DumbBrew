@@ -552,9 +552,23 @@ create table if not exists product_images (
   alt text,
   created_at timestamptz not null default now()
 );
-alter table product_images enable row level security;
-drop policy if exists "product_images public read" on product_images;
-create policy "product_images public read" on product_images for select using (
+
+-- Generalized in place to also hold each product's single short "hero" video
+-- (media_type='video') alongside its gallery images, rather than a separate
+-- table — the dashboard and any future storefront gallery read one ordered
+-- list either way. duration_ms is informational only (set from the client's
+-- own video-metadata read at upload time); the ~0.5s cap itself is enforced
+-- client-side in seller-dashboard.html, not here.
+alter table product_images rename to product_media;
+alter table product_media add column if not exists media_type text not null default 'image';
+alter table product_media add column if not exists duration_ms int;
+alter table product_media drop constraint if exists product_media_media_type_check;
+alter table product_media add constraint product_media_media_type_check check (media_type in ('image', 'video'));
+
+alter table product_media enable row level security;
+drop policy if exists "product_images public read" on product_media;
+drop policy if exists "product_media public read" on product_media;
+create policy "product_media public read" on product_media for select using (
   exists (select 1 from products p where p.id = product_id and p.active)
 );
 

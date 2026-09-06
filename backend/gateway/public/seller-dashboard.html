@@ -241,7 +241,10 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
   let allCollections = [];
   let editingProductId = null;
   let variantRows = [];
-  let pendingImages = []; // { imageKey, alt }
+  let pendingMedia = []; // { imageKey, alt, mediaType: 'image'|'video', durationMs? }
+  const MAX_IMAGES = 6;
+  const MAX_VIDEO_MS = 500;
+  const MAX_VIDEO_TOLERANCE_MS = 100; // encoder/container rounding slack around the 0.5s cap
 
   function renderDashboard(seller) {
     contentEl.innerHTML =
@@ -335,7 +338,7 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
   function resetProductForm() {
     editingProductId = null;
     variantRows = [];
-    pendingImages = [];
+    pendingMedia = [];
     renderProductForm();
   }
 
@@ -352,8 +355,9 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       '<label>Variants (optional — leave empty for a simple single-price product)</label>' +
       '<div id="variant-rows"></div>' +
       '<button type="button" class="secondary" id="btn-add-variant" style="margin-top:10px;">+ Add variant</button>' +
-      '<label>Images</label>' +
-      '<input type="file" id="pf-image-input" accept="image/png,image/jpeg,image/webp" multiple/>' +
+      '<label>Photos &amp; video</label>' +
+      '<div class="sub">Up to ' + MAX_IMAGES + ' images, plus one video of ' + (MAX_VIDEO_MS / 1000) + 's or less.</div>' +
+      '<input type="file" id="pf-image-input" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" multiple/>' +
       '<div class="chips" id="image-chips"></div>' +
       '<label>Collections</label>' +
       '<div id="collection-checks" class="sub">Loading&hellip;</div>' +
@@ -372,7 +376,7 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       renderVariantRows();
     });
     document.getElementById('pf-image-input').addEventListener('change', function (e) {
-      Array.from(e.target.files).forEach(uploadProductImage);
+      Array.from(e.target.files).forEach(handleMediaFile);
       e.target.value = '';
     });
     document.getElementById('btn-save-product').addEventListener('click', saveProduct);
@@ -408,7 +412,56 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
     });
   }
 
-  function uploadProductImage(file) {
+  // Reads a video file's duration in the browser (no upload yet) by loading
+  // it into a detached <video> element and waiting for its metadata.
+  function readVideoDurationMs(file) {
+    return new Promise(function (resolve, reject) {
+      const url = URL.createObjectURL(file);
+      const videoEl = document.createElement('video');
+      videoEl.preload = 'metadata';
+      videoEl.onloadedmetadata = function () {
+        URL.revokeObjectURL(url);
+        resolve(Math.round(videoEl.duration * 1000));
+      };
+      videoEl.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('could not read video metadata'));
+      };
+      videoEl.src = url;
+    });
+  }
+
+  function handleMediaFile(file) {
+    const isVideo = file.type.indexOf('video/') === 0;
+    const msgEl = document.getElementById('product-form-msg');
+
+    if (isVideo) {
+      if (pendingMedia.some(function (m) { return m.mediaType === 'video'; })) {
+        msgEl.innerHTML = '<div class="msg err">Only one video per product — remove the existing one first.</div>';
+        return;
+      }
+      readVideoDurationMs(file)
+        .then(function (durationMs) {
+          if (Math.abs(durationMs - MAX_VIDEO_MS) > MAX_VIDEO_TOLERANCE_MS) {
+            msgEl.innerHTML = '<div class="msg err">Video must be about ' + (MAX_VIDEO_MS / 1000) + 's long (yours is ' + (durationMs / 1000).toFixed(2) + 's).</div>';
+            return;
+          }
+          uploadMedia(file, 'video', durationMs);
+        })
+        .catch(function () {
+          msgEl.innerHTML = '<div class="msg err">Could not read that video\'s duration.</div>';
+        });
+      return;
+    }
+
+    if (pendingMedia.filter(function (m) { return m.mediaType === 'image'; }).length >= MAX_IMAGES) {
+      msgEl.innerHTML = '<div class="msg err">Up to ' + MAX_IMAGES + ' images per product.</div>';
+      return;
+    }
+    uploadMedia(file, 'image');
+  }
+
+  function uploadMedia(file, mediaType, durationMs) {
     const chipsEl = document.getElementById('image-chips');
     const placeholderId = 'up-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     chipsEl.insertAdjacentHTML('beforeend', '<span class="chip" id="' + placeholderId + '">Uploading&hellip;</span>');
@@ -417,7 +470,7 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
         return fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
           .then(function (r) {
             if (!r.ok) throw new Error('upload failed');
-            pendingImages.push({ imageKey: data.imageKey, alt: file.name });
+            pendingMedia.push({ imageKey: data.imageKey, alt: file.name, mediaType: mediaType, durationMs: durationMs });
             renderImageChips();
           });
       })
@@ -430,12 +483,13 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
   function renderImageChips() {
     const el = document.getElementById('image-chips');
     if (!el) return;
-    el.innerHTML = pendingImages.map(function (img, i) {
-      return '<span class="chip">' + escapeHtml(img.alt || img.imageKey) + ' <button type="button" class="remove-x" data-rm-img="' + i + '">&times;</button></span>';
+    el.innerHTML = pendingMedia.map(function (m, i) {
+      const label = (m.mediaType === 'video' ? '&#127909; ' : '') + escapeHtml(m.alt || m.imageKey);
+      return '<span class="chip">' + label + ' <button type="button" class="remove-x" data-rm-img="' + i + '">&times;</button></span>';
     }).join('');
     el.querySelectorAll('[data-rm-img]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        pendingImages.splice(Number(btn.dataset.rmImg), 1);
+        pendingMedia.splice(Number(btn.dataset.rmImg), 1);
         renderImageChips();
       });
     });
@@ -472,12 +526,15 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
       .map(function (v, i) {
         return { title: v.title.trim(), sku: v.sku.trim() || undefined, price: Number(v.price) || 0, inventoryQuantity: Number(v.inventoryQuantity) || 0, position: i };
       });
-    const images = pendingImages.map(function (img, i) { return { imageKey: img.imageKey, alt: img.alt, position: i }; });
+    const media = pendingMedia.map(function (m, i) {
+      return { imageKey: m.imageKey, mediaType: m.mediaType, durationMs: m.durationMs, alt: m.alt, position: i };
+    });
+    const firstImage = media.find(function (m) { return m.mediaType === 'image'; });
 
     btn.disabled = true;
     msgEl.innerHTML = '<div class="msg">Saving&hellip;</div>';
-    const payload = { name: name, description: description, price: price, category: category || undefined, variants: variants, images: images, collectionIds: collectionIds };
-    if (images[0]) payload.imageKey = images[0].imageKey;
+    const payload = { name: name, description: description, price: price, category: category || undefined, variants: variants, media: media, collectionIds: collectionIds };
+    if (firstImage) payload.imageKey = firstImage.imageKey;
 
     const req = editingProductId
       ? api('/api/sellers/products/' + editingProductId, { method: 'PATCH', body: JSON.stringify(payload) })
@@ -499,7 +556,10 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
     variantRows = (product.product_variants || []).map(function (v) {
       return { title: v.title, sku: v.sku || '', price: String(v.price), inventoryQuantity: String(v.inventory_quantity) };
     });
-    pendingImages = (product.product_images || []).map(function (img) { return { imageKey: img.image_key, alt: img.alt }; });
+    pendingMedia = (product.product_media || [])
+      .slice()
+      .sort(function (a, b) { return a.position - b.position; })
+      .map(function (m) { return { imageKey: m.image_key, alt: m.alt, mediaType: m.media_type, durationMs: m.duration_ms }; });
     renderProductForm(product);
     switchTab('add');
   }
@@ -518,7 +578,8 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
           const totalStock = variants.reduce(function (sum, v) { return sum + v.inventory_quantity; }, 0);
           const priceLabel = variants.length ? (variants.length + ' variant' + (variants.length > 1 ? 's' : '')) : money(p.price);
           const stockLabel = variants.length ? (totalStock + ' in stock') : 'untracked';
-          const imgKey = (p.product_images && p.product_images[0] && p.product_images[0].image_key) || p.image_key;
+          const firstImageMedia = (p.product_media || []).find(function (m) { return m.media_type === 'image'; });
+          const imgKey = (firstImageMedia && firstImageMedia.image_key) || p.image_key;
           const thumb = thumbUrl(imgKey);
           return '<div class="product-row" data-id="' + p.id + '">' +
             (thumb ? '<img class="product-thumb" src="' + thumb + '"/>' : '<div class="product-thumb"></div>') +

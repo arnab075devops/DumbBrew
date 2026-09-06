@@ -29,7 +29,7 @@ async function getOrCreateCart(customerId: string): Promise<CartRow> {
 export async function getCart(req: FastifyRequest, reply: FastifyReply) {
   const cart = await getOrCreateCart(req.customerId!);
   const items = await supabaseJson<unknown[]>(
-    `cart_items?cart_id=eq.${cart.id}&select=id,quantity,product_id,variant_id,products(id,name,price,image_key,active,seller_id,sellers(store_name)),product_variants(id,title,price,inventory_quantity)&order=created_at.asc`
+    `cart_items?cart_id=eq.${cart.id}&select=id,quantity,product_id,variant_id,products(id,name,price,image_key,category,active,seller_id,sellers(store_name)),product_variants(id,title,price,inventory_quantity)&order=created_at.asc`
   );
   return reply.send({ cartId: cart.id, items });
 }

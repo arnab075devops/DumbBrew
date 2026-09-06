@@ -38,6 +38,14 @@ a { color:#8a5527; }
 .site-footer .links a { text-decoration:none; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa; }
 .site-footer .partner { color:#f0e5d1; border:1px solid #f0e5d155; padding:8px 16px; border-radius:1px; letter-spacing:1.5px; }
 .wrap { max-width:1000px; margin:0 auto; padding:56px clamp(20px,4vw,40px) 120px; }
+.filter-bar { display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; padding:18px 20px; background:#faf5ea; border-radius:12px; box-shadow:0 2px 8px #24191008; margin-bottom:36px; }
+.filter-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.filter-chip { border:1px solid #3b241422; background:#fff; color:#5a4128; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; padding:7px 14px; border-radius:20px; cursor:pointer; white-space:nowrap; }
+.filter-chip:hover { border-color:#8a552766; }
+.filter-chip.active { background:#17100a; color:#f0e5d1; border-color:#17100a; }
+.filter-select { padding:8px 12px; border:1px solid #3b241422; border-radius:20px; background:#fff; color:#5a4128; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; }
+.filter-sep { width:1px; align-self:stretch; background:#3b241422; }
+@media (max-width: 640px) { .filter-sep { display:none; } }
 .shop-group { margin-bottom:52px; }
 .shop-group:last-child { margin-bottom:0; }
 .group-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #3b241422; }
@@ -121,6 +129,7 @@ a { color:#8a5527; }
   <p>Everything currently for sale across DumbBrew and our onboarded sellers.</p>
 </div>
 <div class="wrap">
+  <div class="filter-bar" id="filter-bar" hidden></div>
   <div id="content">Loading&hellip;</div>
 </div>
 <div class="toast" id="toast"></div>
@@ -173,6 +182,10 @@ a { color:#8a5527; }
   // seller_directory is the public-readable view for this — it has no FK
   // for PostgREST to auto-embed, so it's fetched separately and merged here.
   let wishlistIds = [];
+  let allProducts = [];
+  let allSellers = {};
+  let selectedCategory = 'all';
+  let selectedSellerId = 'all';
 
   Promise.all([
     window.supabaseSelect('products', 'select=id,name,description,price,image_key,category,seller_id&active=eq.true&order=sort.asc'),
@@ -180,20 +193,81 @@ a { color:#8a5527; }
     accessToken ? window.orderApiRequest('/api/wishlist', { method: 'GET' }, accessToken).catch(function () { return { items: [] }; }) : Promise.resolve({ items: [] })
   ])
     .then(function (results) {
-      const products = results[0];
-      const sellers = {};
-      results[1].forEach(function (s) { sellers[s.id] = s; });
+      allProducts = results[0];
+      allSellers = {};
+      results[1].forEach(function (s) { allSellers[s.id] = s; });
       wishlistIds = (results[2].items || []).map(function (it) { return it.product_id; });
-      if (!products.length) {
+      if (!allProducts.length) {
+        document.getElementById('filter-bar').hidden = true;
         contentEl.innerHTML = '<div class="empty">Nothing for sale right now — check back soon.</div>';
         return;
       }
-      render(products, sellers);
+      renderFilterBar();
+      applyFilters();
       highlightFromQuery();
     })
     .catch(function () {
       contentEl.innerHTML = '<div class="empty">Could not load the shop right now.</div>';
     });
+
+  // Categories/sellers are derived from what's actually on sale (in the
+  // order each first appears), same spirit as groupByCategory below — the
+  // filter bar only ever offers choices that currently return results.
+  function renderFilterBar() {
+    const barEl = document.getElementById('filter-bar');
+    const categories = [];
+    allProducts.forEach(function (p) {
+      const c = p.category || 'Other';
+      if (categories.indexOf(c) === -1) categories.push(c);
+    });
+    const sellerIds = [];
+    allProducts.forEach(function (p) {
+      if (sellerIds.indexOf(p.seller_id) === -1) sellerIds.push(p.seller_id);
+    });
+
+    const chipsHtml = '<button type="button" class="filter-chip' + (selectedCategory === 'all' ? ' active' : '') + '" data-category="all">All</button>' +
+      categories.map(function (c) {
+        return '<button type="button" class="filter-chip' + (selectedCategory === c ? ' active' : '') + '" data-category="' + escapeHtml(c) + '">' + escapeHtml(c) + '</button>';
+      }).join('');
+
+    const sellerOptionsHtml = '<option value="all">All sellers</option>' +
+      sellerIds.map(function (id) {
+        const s = allSellers[id];
+        const label = s ? (s.is_house ? s.store_name + ' (Admin Managed)' : s.store_name) : 'Unknown seller';
+        return '<option value="' + id + '"' + (selectedSellerId === id ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      }).join('');
+
+    barEl.hidden = false;
+    barEl.innerHTML =
+      '<div class="filter-chips" id="filter-category-chips">' + chipsHtml + '</div>' +
+      '<div class="filter-sep"></div>' +
+      '<select class="filter-select" id="filter-seller-select">' + sellerOptionsHtml + '</select>';
+
+    barEl.querySelectorAll('[data-category]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        selectedCategory = btn.dataset.category;
+        renderFilterBar();
+        applyFilters();
+      });
+    });
+    document.getElementById('filter-seller-select').addEventListener('change', function (e) {
+      selectedSellerId = e.target.value; // seller_id is a uuid string, incl. 'all'
+      applyFilters();
+    });
+  }
+
+  function applyFilters() {
+    const filtered = allProducts.filter(function (p) {
+      const categoryMatch = selectedCategory === 'all' || (p.category || 'Other') === selectedCategory;
+      const sellerMatch = selectedSellerId === 'all' || p.seller_id === selectedSellerId;
+      return categoryMatch && sellerMatch;
+    });
+    if (!filtered.length) {
+      contentEl.innerHTML = '<div class="empty">No products match these filters.</div>';
+      return;
+    }
+    render(filtered, allSellers);
+  }
 
   // Groups a shop section per distinct product.category — a group simply
   // doesn't appear until at least one active product (house or seller) is
@@ -235,7 +309,8 @@ a { color:#8a5527; }
     const wished = wishlistIds.indexOf(p.id) !== -1;
     const category = p.category || 'Other';
     const tagHtml = isHouse
-      ? '<span class="tag tag-green">' + escapeHtml(category) + '</span>'
+      ? '<span class="tag tag-green">' + escapeHtml(category) + '</span>' +
+        '<span class="tag-seller">Admin Managed</span>'
       : '<span class="tag tag-red">' + escapeHtml(category) + '</span>' +
         (seller ? '<span class="tag-seller">by ' + escapeHtml(seller.store_name) + '</span>' : '');
     const mediaHtml = p.image_key

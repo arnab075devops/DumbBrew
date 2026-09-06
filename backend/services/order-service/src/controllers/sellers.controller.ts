@@ -21,9 +21,14 @@ const variantSchema = z.object({
   position: z.number().int().min(0).default(0)
 });
 
-const imageSchema = z.object({
+const mediaSchema = z.object({
   id: z.number().int().positive().optional(),
   imageKey: z.string().min(1).max(300),
+  mediaType: z.enum(["image", "video"]).default("image"),
+  // Informational only — the client already measured this against the ~0.5s
+  // cap before uploading; this is just carried through for display, not
+  // re-validated (the server never reads the uploaded object's bytes).
+  durationMs: z.number().int().positive().max(60_000).optional(),
   alt: z.string().max(200).optional(),
   position: z.number().int().min(0).default(0)
 });
@@ -36,7 +41,18 @@ const productSchema = z.object({
   category: z.string().max(100).optional(),
   active: z.boolean().optional().default(true),
   variants: z.array(variantSchema).max(50).optional(),
-  images: z.array(imageSchema).max(20).optional(),
+  media: z
+    .array(mediaSchema)
+    .max(7)
+    .optional()
+    .refine(
+      (media) => !media || media.filter((m) => m.mediaType === "video").length <= 1,
+      "at most one video per product"
+    )
+    .refine(
+      (media) => !media || media.filter((m) => m.mediaType === "image").length <= 6,
+      "at most 6 images per product"
+    ),
   collectionIds: z.array(z.number().int().positive()).max(50).optional()
 });
 
@@ -45,7 +61,7 @@ export async function listMyProducts(req: FastifyRequest, reply: FastifyReply) {
     return reply.code(403).send({ error: "not_an_approved_seller" });
   }
   const rows = await supabaseJson<unknown[]>(
-    `products?seller_id=eq.${req.sellerId}&select=*,product_variants(*),product_images(*),product_collections(collection_id)&order=created_at.desc`
+    `products?seller_id=eq.${req.sellerId}&select=*,product_variants(*),product_media(*),product_collections(collection_id)&order=created_at.desc`
   );
   return reply.send({ products: rows });
 }
@@ -73,18 +89,20 @@ async function replaceVariants(productId: number, variants: z.infer<typeof varia
   });
 }
 
-async function replaceImages(productId: number, images: z.infer<typeof imageSchema>[]) {
-  await supabaseRequest(`product_images?product_id=eq.${productId}`, { method: "DELETE" });
-  if (!images.length) return;
-  await supabaseRequest("product_images", {
+async function replaceMedia(productId: number, media: z.infer<typeof mediaSchema>[]) {
+  await supabaseRequest(`product_media?product_id=eq.${productId}`, { method: "DELETE" });
+  if (!media.length) return;
+  await supabaseRequest("product_media", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify(
-      images.map((img) => ({
+      media.map((m) => ({
         product_id: productId,
-        image_key: img.imageKey,
-        alt: img.alt ?? null,
-        position: img.position
+        image_key: m.imageKey,
+        media_type: m.mediaType,
+        duration_ms: m.durationMs ?? null,
+        alt: m.alt ?? null,
+        position: m.position
       }))
     )
   });
@@ -114,7 +132,7 @@ export async function createMyProduct(req: FastifyRequest, reply: FastifyReply) 
   }
   const parsed = productSchema.safeParse(req.body);
   if (!parsed.success) return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
-  const { imageKey, variants, images, collectionIds, ...rest } = parsed.data;
+  const { imageKey, variants, media, collectionIds, ...rest } = parsed.data;
   const created = await supabaseJson<unknown[]>("products", {
     method: "POST",
     headers: { Prefer: "return=representation" },
@@ -122,7 +140,7 @@ export async function createMyProduct(req: FastifyRequest, reply: FastifyReply) 
   });
   const product = (created as any[])[0];
   if (variants) await replaceVariants(product.id, variants);
-  if (images) await replaceImages(product.id, images);
+  if (media) await replaceMedia(product.id, media);
   if (collectionIds) await replaceCollections(product.id, req.sellerId!, collectionIds);
   return reply.code(201).send({ product });
 }
@@ -133,7 +151,7 @@ export async function updateMyProduct(req: FastifyRequest<{ Params: { id: string
   }
   const parsed = productSchema.partial().safeParse(req.body);
   if (!parsed.success) return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
-  const { imageKey, variants, images, collectionIds, ...rest } = parsed.data;
+  const { imageKey, variants, media, collectionIds, ...rest } = parsed.data;
   const patch: Record<string, unknown> = { ...rest };
   if (imageKey !== undefined) patch.image_key = imageKey;
 
@@ -148,7 +166,7 @@ export async function updateMyProduct(req: FastifyRequest<{ Params: { id: string
   if (!updated[0]) return reply.code(404).send({ error: "not_found" });
   const productId = updated[0].id;
   if (variants) await replaceVariants(productId, variants);
-  if (images) await replaceImages(productId, images);
+  if (media) await replaceMedia(productId, media);
   if (collectionIds) await replaceCollections(productId, req.sellerId!, collectionIds);
   return reply.send({ product: updated[0] });
 }

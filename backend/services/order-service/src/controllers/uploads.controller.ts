@@ -21,8 +21,16 @@ export async function presignApplicationUpload(req: FastifyRequest, reply: Fasti
   return reply.send({ uploadUrl, imageKey });
 }
 
+const sellerMediaPresignSchema = z.object({
+  fileName: z.string().min(1).max(150),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"])
+});
+
+// Product media (images + the one short hero video) — a wider content-type
+// allowlist than presignApplicationUpload above, gated behind seller auth
+// rather than the public rate limit.
 export async function presignSellerUpload(req: FastifyRequest, reply: FastifyReply) {
-  const parsed = presignSchema.safeParse(req.body);
+  const parsed = sellerMediaPresignSchema.safeParse(req.body);
   if (!parsed.success) return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
   const { uploadUrl, imageKey } = await createUploadUrl(
     `products/${req.sellerId}`,

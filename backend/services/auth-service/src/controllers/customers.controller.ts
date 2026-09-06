@@ -188,6 +188,21 @@ export async function createCustomerSession(req: FastifyRequest, reply: FastifyR
     return reply.code(401).send({ error: "invalid_id_token" });
   }
 
+  // Any Authentik identity valid for this OAuth2 app can reach here — including
+  // e.g. the Authentik superuser — but only ones that completed /register have a
+  // customers row. Minting a token for one that doesn't would just fail later,
+  // opaquely, as an FK violation on the first cart/wishlist/order write.
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    const check = await fetch(
+      `${config.supabaseUrl}/rest/v1/customers?id=eq.${claims.sub}&select=id&limit=1`,
+      { headers: { apikey: config.supabaseServiceRoleKey, Authorization: `Bearer ${config.supabaseServiceRoleKey}` } }
+    );
+    const rows: Array<{ id: string }> = check.ok ? await check.json() : [];
+    if (!rows[0]) {
+      return reply.code(403).send({ error: "not_a_registered_customer" });
+    }
+  }
+
   const accessToken = jwt.sign(
     { sub: claims.sub, role: "authenticated" },
     config.supabaseJwtSecret,

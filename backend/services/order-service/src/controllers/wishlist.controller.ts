@@ -9,7 +9,7 @@ interface WishlistItemRow {
 
 export async function listWishlist(req: FastifyRequest, reply: FastifyReply) {
   const items = await supabaseJson<unknown[]>(
-    `wishlist_items?customer_id=eq.${req.customerId}&select=id,created_at,product_id,products(id,name,price,image_key,active,seller_id,sellers(store_name))&order=created_at.desc`
+    `wishlist_items?customer_id=eq.${req.customerId}&select=id,created_at,product_id,products(id,name,price,image_key,category,active,seller_id,sellers(store_name))&order=created_at.desc`
   );
   return reply.send({ items });
 }

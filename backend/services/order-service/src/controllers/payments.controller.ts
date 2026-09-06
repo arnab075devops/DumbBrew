@@ -9,10 +9,71 @@ const verifySchema = z.object({
   razorpaySignature: z.string()
 });
 
-// Fast-path only: lets the browser show "payment successful" immediately
-// after checkout.js's own success callback fires, instead of waiting on the
-// webhook's network round trip. Does NOT flip payment_status — only the
-// webhook below (Razorpay's own server calling us) is trusted to do that.
+// Shared by both confirmation paths below — marks an order paid, decrements
+// variant inventory, empties the cart, and drops the order's products from
+// the customer's wishlist. Idempotent (guarded on payment_status !== "paid")
+// so it's safe to run twice if both the client verify call and the webhook
+// end up confirming the same order.
+async function confirmOrderPaid(order: { id: number; customer_id: string; payment_status: string }, razorpayPaymentId: string | undefined) {
+  if (order.payment_status === "paid") return;
+  await supabaseRequest(`orders?id=eq.${order.id}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ payment_status: "paid", razorpay_payment_id: razorpayPaymentId ?? null })
+  });
+
+  // Decrement inventory now that the order is confirmed paid — not at
+  // checkout time, since an abandoned/failed checkout must not hold stock
+  // hostage. Only variant-tracked lines carry inventory; simple products (no
+  // variant) are untracked.
+  const lines = await supabaseJson<Array<{ variant_id: number | null; quantity: number }>>(
+    `order_items?order_id=eq.${order.id}&variant_id=not.is.null&select=variant_id,quantity`
+  );
+  for (const line of lines) {
+    const variant = await supabaseJson<Array<{ inventory_quantity: number }>>(
+      `product_variants?id=eq.${line.variant_id}&select=inventory_quantity&limit=1`
+    );
+    if (!variant[0]) continue;
+    const nextQuantity = Math.max(0, variant[0].inventory_quantity - line.quantity);
+    await supabaseRequest(`product_variants?id=eq.${line.variant_id}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ inventory_quantity: nextQuantity })
+    });
+  }
+
+  // Only now does the cart actually empty — an unpaid/abandoned checkout
+  // attempt leaves it untouched so the customer can retry.
+  const carts = await supabaseJson<Array<{ id: number }>>(
+    `carts?customer_id=eq.${order.customer_id}&select=id&limit=1`
+  );
+  if (carts[0]) {
+    await supabaseRequest(`cart_items?cart_id=eq.${carts[0].id}`, { method: "DELETE" });
+  }
+
+  // A confirmed purchase no longer needs to be "saved for later" — drop this
+  // order's products from the customer's wishlist, if present.
+  const purchasedProductIds = await supabaseJson<Array<{ product_id: number }>>(
+    `order_items?order_id=eq.${order.id}&select=product_id`
+  );
+  const productIds = [...new Set(purchasedProductIds.map((line) => line.product_id))];
+  if (productIds.length) {
+    await supabaseRequest(
+      `wishlist_items?customer_id=eq.${order.customer_id}&product_id=in.(${productIds.join(",")})`,
+      { method: "DELETE" }
+    );
+  }
+}
+
+// Razorpay's checkout.js hands the browser this order_id/payment_id/signature
+// triple only after a genuinely successful payment, and the signature is an
+// HMAC keyed with our own razorpayKeySecret — cryptographically equivalent
+// proof to the webhook's own signature check, just arriving over the
+// customer's connection instead of Razorpay's server calling us directly.
+// Confirming here (not just reporting status) is what lets local/dev
+// environments reach "paid" at all, since Razorpay's webhook can't reach a
+// non-public localhost — the webhook below still runs as the reconciliation
+// path for browsers that close before this call completes.
 export async function verifyPayment(req: FastifyRequest, reply: FastifyReply) {
   const parsed = verifySchema.safeParse(req.body);
   if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
@@ -21,19 +82,22 @@ export async function verifyPayment(req: FastifyRequest, reply: FastifyReply) {
   if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
     return reply.code(400).send({ error: "invalid_signature" });
   }
-  const orders = await supabaseJson<Array<{ id: number; payment_status: string }>>(
-    `orders?razorpay_order_id=eq.${razorpayOrderId}&customer_id=eq.${req.customerId}&select=id,payment_status&limit=1`
+  const orders = await supabaseJson<Array<{ id: number; customer_id: string; payment_status: string }>>(
+    `orders?razorpay_order_id=eq.${razorpayOrderId}&customer_id=eq.${req.customerId}&select=id,customer_id,payment_status&limit=1`
   );
   if (!orders[0]) return reply.code(404).send({ error: "order_not_found" });
-  return reply.send({ paymentStatus: orders[0].payment_status });
+  await confirmOrderPaid(orders[0], razorpayPaymentId);
+  return reply.send({ paymentStatus: "paid" });
 }
 
-// The actual source of truth for "paid" — Razorpay's server calls this
-// directly (see payments.routes.ts / index.ts: no requireCustomer on this
-// route, and no browser is ever involved). Signature is checked against the
-// RAW request body — see index.ts's content-type parser, which stashes
-// req.rawBody before JSON-parsing it, since re-serializing the parsed
-// object would not byte-for-byte match what Razorpay signed.
+// Reconciliation path — Razorpay's server calls this directly (see
+// payments.routes.ts / index.ts: no requireCustomer on this route, and no
+// browser is ever involved), so it confirms orders even when verifyPayment
+// above never ran (browser closed mid-checkout, UPI autopay, etc.).
+// Signature is checked against the RAW request body — see index.ts's
+// content-type parser, which stashes req.rawBody before JSON-parsing it,
+// since re-serializing the parsed object would not byte-for-byte match what
+// Razorpay signed.
 export async function webhook(req: FastifyRequest, reply: FastifyReply) {
   const signature = req.headers["x-razorpay-signature"];
   const rawBody = (req as { rawBody?: string }).rawBody;
@@ -58,42 +122,7 @@ export async function webhook(req: FastifyRequest, reply: FastifyReply) {
       `orders?razorpay_order_id=eq.${razorpayOrderId}&select=id,customer_id,payment_status&limit=1`
     );
     const order = orders[0];
-    if (order && order.payment_status !== "paid") {
-      await supabaseRequest(`orders?id=eq.${order.id}`, {
-        method: "PATCH",
-        headers: { Prefer: "return=minimal" },
-        body: JSON.stringify({ payment_status: "paid", razorpay_payment_id: razorpayPaymentId ?? null })
-      });
-
-      // Decrement inventory now that the order is confirmed paid — not at
-      // checkout time, since an abandoned/failed checkout must not hold
-      // stock hostage. Only variant-tracked lines carry inventory; simple
-      // products (no variant) are untracked.
-      const lines = await supabaseJson<Array<{ variant_id: number | null; quantity: number }>>(
-        `order_items?order_id=eq.${order.id}&variant_id=not.is.null&select=variant_id,quantity`
-      );
-      for (const line of lines) {
-        const variant = await supabaseJson<Array<{ inventory_quantity: number }>>(
-          `product_variants?id=eq.${line.variant_id}&select=inventory_quantity&limit=1`
-        );
-        if (!variant[0]) continue;
-        const nextQuantity = Math.max(0, variant[0].inventory_quantity - line.quantity);
-        await supabaseRequest(`product_variants?id=eq.${line.variant_id}`, {
-          method: "PATCH",
-          headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ inventory_quantity: nextQuantity })
-        });
-      }
-
-      // Only now does the cart actually empty — an unpaid/abandoned
-      // checkout attempt leaves it untouched so the customer can retry.
-      const carts = await supabaseJson<Array<{ id: number }>>(
-        `carts?customer_id=eq.${order.customer_id}&select=id&limit=1`
-      );
-      if (carts[0]) {
-        await supabaseRequest(`cart_items?cart_id=eq.${carts[0].id}`, { method: "DELETE" });
-      }
-    }
+    if (order) await confirmOrderPaid(order, razorpayPaymentId);
   } else if (event === "payment.failed") {
     await supabaseRequest(`orders?razorpay_order_id=eq.${razorpayOrderId}&payment_status=eq.created`, {
       method: "PATCH",

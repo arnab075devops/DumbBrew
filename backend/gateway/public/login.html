@@ -191,7 +191,13 @@ class Component extends DCLogic {
           scope: 'openid profile email',
           state,
           code_challenge: challenge,
-          code_challenge_method: 'S256'
+          code_challenge_method: 'S256',
+          // Without this, Authentik silently reuses whatever session cookie
+          // is already in the browser (standard OIDC SSO) and skips the
+          // credentials form entirely — which is how a browser left logged
+          // into Authentik as akadmin ended up "logged in" as a DumbBrew
+          // customer with no customers row. Forces the login form every time.
+          prompt: 'login'
         });
         window.location.href = AUTHENTIK_URL.replace(/\/$/, '') + '/application/o/authorize/?' + params.toString();
       }
