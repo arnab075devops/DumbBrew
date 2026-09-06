@@ -5,23 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shop – DumbBrew</title>
 <script src="./config.js"></script>
+<script src="./support.js"></script>
+<script src="./auth-nav.js"></script>
+<script src="./cart-nav.js"></script>
+<script src="./wishlist-nav.js"></script>
+<script src="./search.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
-.wrap { max-width:1000px; margin:0 auto; padding:100px 24px 120px; }
-a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
-h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; margin:0 0 8px; color:#17100a; }
-.sub { font-size:14px; color:#5a412899; margin-bottom:36px; }
+a { color:#8a5527; }
+.site-nav { display:flex; align-items:center; justify-content:space-between; padding:20px clamp(20px,4vw,72px); position:sticky; top:0; background:#f0e5d1b3; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid #3b241414; z-index:20; color:#241a10; flex-wrap:wrap; gap:16px; }
+.site-nav .brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.site-nav .brand img { width:40px; height:40px; object-fit:contain; display:block; }
+.site-nav .brand-name { font-family:'Playfair Display',serif; font-weight:700; font-size:20px; letter-spacing:1px; color:#17100a; }
+.site-nav .links { display:flex; gap:28px; align-items:center; flex-wrap:wrap; }
+.site-nav .links a { text-decoration:none; font-size:12.5px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease; }
+.site-nav .links a:hover, .site-nav .links a.active { color:#8a5527; }
+.icon-btn { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none; position:relative; text-decoration:none; background:none; cursor:pointer; padding:0; }
+.icon-btn:hover { color:#8a5527; border-color:#8a552766; }
+.page-head { background:#17100a; color:#f0e5d1; padding:64px clamp(20px,4vw,72px) 52px; }
+.page-head .eyebrow { font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:14px; }
+.page-head h1 { font-family:'Playfair Display',serif; font-size:clamp(28px,4vw,44px); font-weight:900; margin:0; letter-spacing:-1px; color:#f0e5d1; }
+.page-head p { font-size:14px; color:#f0e5d1aa; margin:14px 0 0; font-weight:300; max-width:560px; line-height:1.7; }
+.site-footer { background:#17100a; color:#f0e5d1; padding:48px clamp(20px,4vw,72px); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+.site-footer .brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+.site-footer .brand img { width:28px; height:28px; object-fit:contain; display:block; }
+.site-footer .brand span { font-family:'Playfair Display',serif; font-weight:700; font-size:15px; letter-spacing:1px; }
+.site-footer .copy { font-size:11px; color:#f0e5d166; letter-spacing:0.5px; }
+.site-footer .links { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+.site-footer .links a { text-decoration:none; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa; }
+.site-footer .partner { color:#f0e5d1; border:1px solid #f0e5d155; padding:8px 16px; border-radius:1px; letter-spacing:1.5px; }
+.wrap { max-width:1000px; margin:0 auto; padding:56px clamp(20px,4vw,40px) 120px; }
+.shop-group { margin-bottom:52px; }
+.shop-group:last-child { margin-bottom:0; }
+.group-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #3b241422; }
+.group-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#17100a; }
+.group-count { font-size:12px; color:#5a412899; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; }
 .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:22px; }
 .pcard { background:#faf5ea; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px #24191008; display:flex; flex-direction:column; position:relative; transition:box-shadow 0.3s ease; }
 .pcard.highlight { box-shadow:0 0 0 3px #c99a54; }
 .pcard img { width:100%; aspect-ratio:1; object-fit:cover; background:#3b2414; display:block; }
+.pcard-icon { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:#e7dac2; }
+.pcard-icon svg { width:62%; height:62%; display:block; }
 .wish-btn { position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:50%; border:none; background:#17100acc; color:#f0e5d1; cursor:pointer; font-size:15px; line-height:1; z-index:1; }
 .wish-btn.on { color:#e0684f; }
 .pbody { padding:16px 18px 18px; display:flex; flex-direction:column; flex:1; }
+.tag-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.tag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:10px; white-space:nowrap; }
+.tag-green { background:#7d8a4c22; color:#5a7d3c; }
+.tag-red { background:#a13a2e1a; color:#a13a2e; }
+.tag-seller { font-size:11px; color:#8a5527; font-weight:500; }
 .pname { font-weight:600; font-size:15px; margin-bottom:4px; }
-.pseller { font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:#8a5527; margin-bottom:8px; }
 .pdesc { font-size:13px; color:#5a4128; flex:1; margin-bottom:12px; line-height:1.5; }
 .prow { display:flex; align-items:center; justify-content:space-between; }
 .pprice { font-weight:700; font-family:'Playfair Display',serif; color:#17100a; }
@@ -31,17 +67,75 @@ h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; marg
 .empty { text-align:center; color:#5a412899; padding:60px 0; }
 .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:#17100a; color:#f0e5d1; padding:12px 22px; border-radius:4px; font-size:13px; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
 .toast.show { opacity:1; }
+@media (max-width: 640px) {
+  .site-nav { padding:14px 16px; }
+  .page-head { padding:40px 16px 32px; }
+  .wrap { padding:28px 16px 80px; }
+  .site-footer { padding:32px 16px; flex-direction:column; text-align:center; }
+}
 </style>
+<link rel="stylesheet" href="./responsive.css">
+<script src="./mobile-nav.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <a class="home" href="./index.html">&larr; Back to DumbBrew</a>
-  <a class="home" href="./wishlist.html" style="float:right;">Wishlist &rarr;</a>
+<div class="site-nav" data-nav="true">
+  <a href="./index.html" class="brand">
+    <img data-asset="db-logo.png" src="./assets/db-logo.png" alt="DumbBrew logo"/>
+    <span class="brand-name">DumbBrew</span>
+  </a>
+  <div class="links">
+    <a href="./brews.html">Brews</a>
+    <a href="./menu.html">Menu</a>
+    <a href="./story.html">Story</a>
+    <a href="./gallery.html">Gallery</a>
+    <a href="./shop.html" class="active">Shop</a>
+    <a href="./tutorials.html">Tutorials</a>
+    <a href="./visit.html">Visit</a>
+    <button type="button" class="icon-btn" data-search-toggle="true" aria-label="Search">
+      <span style="position:relative; width:15px; height:15px; display:block;">
+        <span style="position:absolute; top:0; left:0; width:10px; height:10px; border:1.5px solid currentColor; border-radius:50%; box-sizing:border-box;"></span>
+        <span style="position:absolute; bottom:0; right:0; width:6px; height:2px; background:currentColor; transform:rotate(45deg); transform-origin:right center;"></span>
+      </span>
+    </button>
+    <a href="./wishlist.html" class="icon-btn" aria-label="Wishlist" style="font-size:15px; line-height:1;">&#9825;</a>
+    <a href="./login.html" class="icon-btn" aria-label="Account">
+      <span style="position:relative; width:15px; height:15px; display:block;">
+        <span style="position:absolute; top:0; left:3.5px; width:8px; height:8px; border-radius:50%; background:currentColor;"></span>
+        <span style="position:absolute; bottom:-1px; left:0; width:15px; height:8px; border-radius:8px 8px 0 0; background:currentColor; overflow:hidden;"></span>
+      </span>
+    </a>
+    <a href="./cart.html" class="icon-btn" aria-label="Cart">
+      <span style="position:relative; width:16px; height:14px; display:block;">
+        <span style="position:absolute; top:0; left:1px; width:12px; height:8px; border:1.5px solid currentColor; border-top:none; border-radius:0 0 2px 2px; box-sizing:border-box;"></span>
+        <span style="position:absolute; top:-3px; left:3px; width:8px; height:5px; border:1.5px solid currentColor; border-bottom:none; border-radius:3px 3px 0 0; box-sizing:border-box;"></span>
+        <span style="position:absolute; bottom:-2px; left:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+        <span style="position:absolute; bottom:-2px; right:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+      </span>
+    </a>
+  </div>
+</div>
+<script>(function(){var els=document.querySelectorAll('[data-asset]');for(var i=0;i<els.length;i++){els[i].src=window.assetUrl(els[i].getAttribute('data-asset'));}})();</script>
+<div class="page-head">
+  <div class="eyebrow">Right Now, For Sale</div>
   <h1>Shop</h1>
-  <div class="sub">Everything currently for sale across DumbBrew and our onboarded sellers.</div>
+  <p>Everything currently for sale across DumbBrew and our onboarded sellers.</p>
+</div>
+<div class="wrap">
   <div id="content">Loading&hellip;</div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="site-footer">
+  <a href="./index.html" class="brand">
+    <img data-asset="db-logo.png" src="./assets/db-logo.png" alt="DumbBrew logo"/>
+    <span>DumbBrew</span>
+  </a>
+  <div class="copy">&copy; 2026 DumbBrew Coffee &amp; Bakery. Made with love and too much caffeine.</div>
+  <div class="links">
+    <a href="./seller-apply.html" class="partner">Partner With Us</a>
+    <a href="./terms.html">Terms</a>
+    <a href="./data-policy.html">Data Policy</a>
+  </div>
+</div>
 <script>
 (function () {
   const contentEl = document.getElementById('content');
@@ -59,6 +153,20 @@ h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; marg
     setTimeout(function () { toastEl.classList.remove('show'); }, 2200);
   }
 
+  // Hand-drawn vector icons, one per catalog group — used as the product
+  // image whenever a listing has no photo (image_key), instead of a blank
+  // placeholder. Falls back to a coffee-bean mark for any category outside
+  // this list (e.g. a seller's own category name).
+  const GROUP_ICONS = {
+    'Hot Coffee': '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><path d="M16 28h24v10a12 12 0 0 1-12 12h0a12 12 0 0 1-12-12V28z" fill="none" stroke="#5a4128" stroke-width="2.2" stroke-linejoin="round"/><path d="M40 30h4a5 5 0 0 1 0 10h-4" fill="none" stroke="#5a4128" stroke-width="2.2"/><path d="M22 16c0 2-3 3-3 6M29 16c0 2-3 3-3 6M36 16c0 2-3 3-3 6" fill="none" stroke="#c99a54" stroke-width="2" stroke-linecap="round"/></svg>',
+    'Cold Drinks': '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><path d="M20 20h24l-3 28a3 3 0 0 1-3 3H26a3 3 0 0 1-3-3L20 20z" fill="none" stroke="#5a4128" stroke-width="2.2" stroke-linejoin="round"/><path d="M22 26h20" stroke="#5a4128" stroke-width="1.6" opacity="0.5"/><rect x="26" y="19" width="7" height="7" rx="1.5" fill="none" stroke="#c99a54" stroke-width="1.6" transform="rotate(20 29.5 22.5)"/><path d="M40 14l-4 38" stroke="#8a5527" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    'Smoothies & Juices': '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><path d="M21 22h22l-2.5 26a3 3 0 0 1-3 2.7H26.5a3 3 0 0 1-3-2.7L21 22z" fill="none" stroke="#5a4128" stroke-width="2.2" stroke-linejoin="round"/><circle cx="40" cy="20" r="6" fill="none" stroke="#c99a54" stroke-width="2"/><path d="M40 14v12M34 20h12" stroke="#c99a54" stroke-width="1.4"/><path d="M38 12l-2 40" stroke="#8a5527" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    'Hot Chocolate & Specialty': '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><path d="M16 30h24v8a12 12 0 0 1-12 12h0a12 12 0 0 1-12-12v-8z" fill="none" stroke="#5a4128" stroke-width="2.2" stroke-linejoin="round"/><path d="M40 32h4a5 5 0 0 1 0 10h-4" fill="none" stroke="#5a4128" stroke-width="2.2"/><path d="M18 30c2-4 4-4 6-8s4-4 6-8" fill="none" stroke="#c99a54" stroke-width="2.2" stroke-linecap="round"/><circle cx="30" cy="14" r="1.6" fill="#c99a54"/></svg>',
+    'Tea': '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><path d="M16 30h22v6a11 11 0 0 1-11 11h0a11 11 0 0 1-11-11v-6z" fill="none" stroke="#5a4128" stroke-width="2.2" stroke-linejoin="round"/><path d="M38 32h4a4.5 4.5 0 0 1 0 9h-4" fill="none" stroke="#5a4128" stroke-width="2.2"/><path d="M27 30V18l6-4" fill="none" stroke="#c99a54" stroke-width="1.6"/><rect x="30" y="9" width="6" height="4.5" rx="1" fill="none" stroke="#c99a54" stroke-width="1.4"/></svg>'
+  };
+  const DEFAULT_ICON = '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e7dac2"/><ellipse cx="32" cy="32" rx="14" ry="20" fill="none" stroke="#5a4128" stroke-width="2.2" transform="rotate(20 32 32)"/><path d="M32 14c-4 8-4 28 0 36" fill="none" stroke="#5a4128" stroke-width="2" transform="rotate(20 32 32)"/></svg>';
+  function iconFor(category) { return GROUP_ICONS[category] || DEFAULT_ICON; }
+
   // The `sellers` table itself has no public-read RLS policy (only "own
   // row" — see schema.sql), so a products?select=...,sellers(store_name)
   // embed would silently come back null for every row under the anon key.
@@ -67,51 +175,86 @@ h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; marg
   let wishlistIds = [];
 
   Promise.all([
-    window.supabaseSelect('products', 'select=id,name,description,price,image_key,seller_id&active=eq.true&order=sort.asc'),
-    window.supabaseSelect('seller_directory', 'select=id,store_name'),
+    window.supabaseSelect('products', 'select=id,name,description,price,image_key,category,seller_id&active=eq.true&order=sort.asc'),
+    window.supabaseSelect('seller_directory', 'select=id,store_name,is_house'),
     accessToken ? window.orderApiRequest('/api/wishlist', { method: 'GET' }, accessToken).catch(function () { return { items: [] }; }) : Promise.resolve({ items: [] })
   ])
     .then(function (results) {
       const products = results[0];
-      const sellerNames = {};
-      results[1].forEach(function (s) { sellerNames[s.id] = s.store_name; });
+      const sellers = {};
+      results[1].forEach(function (s) { sellers[s.id] = s; });
       wishlistIds = (results[2].items || []).map(function (it) { return it.product_id; });
       if (!products.length) {
         contentEl.innerHTML = '<div class="empty">Nothing for sale right now — check back soon.</div>';
         return;
       }
-      render(products, sellerNames);
+      render(products, sellers);
       highlightFromQuery();
     })
     .catch(function () {
       contentEl.innerHTML = '<div class="empty">Could not load the shop right now.</div>';
     });
 
-  function render(products, sellerNames) {
-    contentEl.innerHTML = '<div class="grid">' + products.map(function (p) {
-      const storeName = sellerNames[p.seller_id];
-      const wished = wishlistIds.indexOf(p.id) !== -1;
-      return '<div class="pcard" id="product-' + p.id + '" data-id="' + p.id + '">' +
-        '<button class="wish-btn' + (wished ? ' on' : '') + '" data-action="wish" aria-label="Save to wishlist">' + (wished ? '&#9829;' : '&#9825;') + '</button>' +
-        '<img src="' + (p.image_key ? window.assetUrl(p.image_key) : '') + '" alt="' + escapeHtml(p.name) + '"/>' +
-        '<div class="pbody">' +
-          (storeName ? '<div class="pseller">' + escapeHtml(storeName) + '</div>' : '') +
-          '<div class="pname">' + escapeHtml(p.name) + '</div>' +
-          '<div class="pdesc">' + escapeHtml(p.description || '') + '</div>' +
-          '<div class="prow">' +
-            '<span class="pprice">' + window.formatINR(p.price) + '</span>' +
-            '<button class="add-btn" data-action="add-to-cart">Add to Cart</button>' +
-          '</div>' +
-          '<div class="pdesc-msg" data-role="msg"></div>' +
+  // Groups a shop section per distinct product.category — a group simply
+  // doesn't appear until at least one active product (house or seller) is
+  // tagged into it, so this list is implicitly "which tags are active right
+  // now" rather than a fixed, hardcoded menu of sections.
+  function groupByCategory(products) {
+    const order = [];
+    const byCategory = {};
+    products.forEach(function (p) {
+      const key = p.category || 'Other';
+      if (!byCategory[key]) { byCategory[key] = []; order.push(key); }
+      byCategory[key].push(p);
+    });
+    return order.map(function (key) { return { category: key, items: byCategory[key] }; });
+  }
+
+  function render(products, sellers) {
+    const groups = groupByCategory(products);
+    contentEl.innerHTML = groups.map(function (group) {
+      return '<div class="shop-group">' +
+        '<div class="group-head">' +
+          '<div class="group-title">' + escapeHtml(group.category) + '</div>' +
+          '<div class="group-count">' + group.items.length + (group.items.length === 1 ? ' item' : ' items') + '</div>' +
         '</div>' +
+        '<div class="grid">' + group.items.map(function (p) { return productCardHtml(p, sellers); }).join('') + '</div>' +
       '</div>';
-    }).join('') + '</div>';
+    }).join('');
 
     contentEl.querySelectorAll('.pcard').forEach(function (card) {
       const productId = Number(card.dataset.id);
       card.querySelector('[data-action="add-to-cart"]').addEventListener('click', function (e) { addToCart(productId, e.target, card); });
       card.querySelector('[data-action="wish"]').addEventListener('click', function (e) { toggleWishlist(productId, e.target); });
     });
+  }
+
+  function productCardHtml(p, sellers) {
+    const seller = sellers[p.seller_id];
+    const isHouse = !!(seller && seller.is_house);
+    const wished = wishlistIds.indexOf(p.id) !== -1;
+    const category = p.category || 'Other';
+    const tagHtml = isHouse
+      ? '<span class="tag tag-green">' + escapeHtml(category) + '</span>'
+      : '<span class="tag tag-red">' + escapeHtml(category) + '</span>' +
+        (seller ? '<span class="tag-seller">by ' + escapeHtml(seller.store_name) + '</span>' : '');
+    const mediaHtml = p.image_key
+      ? '<img src="' + window.assetUrl(p.image_key) + '" alt="' + escapeHtml(p.name) + '"/>'
+      : '<div class="pcard-icon" aria-hidden="true">' + iconFor(category) + '</div>';
+    return '<div class="pcard" id="product-' + p.id + '" data-id="' + p.id + '">' +
+      '<button class="wish-btn' + (wished ? ' on' : '') + '" data-action="wish" aria-label="Save to wishlist">' + (wished ? '&#9829;' : '&#9825;') + '</button>' +
+      mediaHtml +
+      '<div class="pbody">' +
+        '<div class="tag-row">' + tagHtml + '</div>' +
+        '<div class="pname">' + escapeHtml(p.name) + '</div>' +
+        '<div class="pdesc">' + escapeHtml(p.description || '') + '</div>' +
+        '<div class="prow">' +
+          '<span class="pprice">' + window.formatINR(p.price) + '</span>' +
+          '<button class="add-btn" data-action="add-to-cart">Add to Cart</button>' +
+        '</div>' +
+        '<div class="pdesc-msg" data-role="msg"></div>' +
+      '</div>' +
+    '</div>';
   }
 
   function highlightFromQuery() {

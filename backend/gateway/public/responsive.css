@@ -1,0 +1,118 @@
+/* Shared responsive layer for every page in this site. Since pages here are
+   built with inline styles (no build step, see config.js's header comment),
+   most rules below target inline style *substrings* with !important — that
+   still loses to nothing (inline styles carry no !important of their own),
+   so it reliably overrides fixed desktop values without editing every page's
+   markup. Loaded on every page after that page's own <style> block. */
+
+html, body { max-width: 100%; overflow-x: hidden; }
+img, video { max-width: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ---------- Nav: hide the text link row, mobile-nav.js adds a toggle ---------- */
+/* Text nav links (Brews/Menu/Story/...) are plain <a> with no aria-label;
+   icon links/buttons (search/wishlist/account/cart) all carry aria-label,
+   so this selector reaches the former without touching the latter and
+   without needing any markup change on the branded (x-dc) pages. */
+@media (max-width: 860px) {
+  [data-nav] a:not([aria-label]) { display: none !important; }
+  [data-nav] { flex-wrap: nowrap !important; }
+}
+
+/* mobile-nav.js injects this button + panel as new siblings of [data-nav]
+   (never reparenting existing nodes owned by the x-dc/React runtime — see
+   auth-nav.js's own comments on why that matters). Hidden above the
+   breakpoint since the full link row already shows there. */
+.mnav-toggle { display: none; }
+@media (max-width: 860px) {
+  .mnav-toggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid #3b241433;
+    background: none; cursor: pointer; padding: 0; flex: none;
+  }
+  .mnav-toggle span { display: block; width: 16px; height: 1.5px; background: #3b2414; position: relative; }
+  .mnav-toggle span::before, .mnav-toggle span::after {
+    content: ''; position: absolute; left: 0; width: 16px; height: 1.5px; background: #3b2414;
+  }
+  .mnav-toggle span::before { top: -5px; }
+  .mnav-toggle span::after { top: 5px; }
+}
+.mnav-panel {
+  display: none; flex-direction: column; gap: 2px;
+  position: fixed; left: 0; right: 0; top: var(--mnav-top, 70px); z-index: 30;
+  background: #faf5ea; box-shadow: 0 16px 30px #17100a26; padding: 10px clamp(20px,4vw,72px) 18px;
+  max-height: calc(100vh - var(--mnav-top, 70px)); overflow-y: auto;
+}
+.mnav-panel.open { display: flex; }
+.mnav-panel a {
+  text-decoration: none; padding: 13px 0; font-size: 13px; font-weight: 500;
+  letter-spacing: 1.5px; text-transform: uppercase; color: #3b2414cc; border-top: 1px solid #3b241414;
+}
+.mnav-panel a:first-child { border-top: none; }
+
+/* ---------- Section padding: every page uses "<v>px 72px[ <v2>px]" ---------- */
+@media (max-width: 860px) {
+  [style*=" 72px"] { padding-left: 20px !important; padding-right: 20px !important; }
+}
+@media (max-width: 480px) {
+  [style*=" 72px"] { padding-left: 16px !important; padding-right: 16px !important; }
+}
+
+/* Curated vertical-padding cuts for the common oversized section paddings —
+   170-180px of top/bottom whitespace reads as empty space, not elegance, on
+   a phone-height viewport. */
+@media (max-width: 860px) {
+  [style*="padding:20px 72px"] { padding-top: 14px !important; padding-bottom: 14px !important; }
+  [style*="padding:96px 72px 120px"] { padding-top: 90px !important; padding-bottom: 56px !important; }
+  [style*="padding:140px 72px 100px"] { padding-top: 64px !important; padding-bottom: 48px !important; }
+  [style*="padding:140px 72px 180px"] { padding-top: 64px !important; padding-bottom: 64px !important; }
+  [style*="padding:140px 72px 60px"] { padding-top: 64px !important; padding-bottom: 32px !important; }
+  [style*="padding:120px 72px 180px"] { padding-top: 48px !important; padding-bottom: 64px !important; }
+  [style*="padding:60px 32px 140px"] { padding-top: 32px !important; padding-bottom: 56px !important; }
+  [style*="padding:64px 72px"] { padding-top: 40px !important; padding-bottom: 40px !important; }
+  [style*="padding:170px 72px"] { padding-top: 64px !important; padding-bottom: 64px !important; }
+  [style*="padding:180px 72px"] { padding-top: 72px !important; padding-bottom: 72px !important; }
+  [style*="padding:150px 72px"] { padding-top: 60px !important; padding-bottom: 60px !important; }
+  [style*="padding:120px 72px"] { padding-top: 56px !important; padding-bottom: 56px !important; }
+  [style*="padding:110px 72px"] { padding-top: 56px !important; padding-bottom: 56px !important; }
+  [style*="padding:100px 72px 160px"] { padding-top: 56px !important; padding-bottom: 64px !important; }
+  [style*="padding:80px 72px 160px"] { padding-top: 48px !important; padding-bottom: 64px !important; }
+  [style*="padding:60px 72px 120px"] { padding-top: 32px !important; padding-bottom: 56px !important; }
+  [style*="padding:36px 72px 0"] { padding-top: 24px !important; }
+  [style*="padding:160px 24px"] { padding-top: 72px !important; padding-bottom: 72px !important; }
+}
+
+/* ---------- Grids: stack on mobile / small tablet, soften on larger tablet ---------- */
+/* auto-fill/auto-fit grids (product/tutorial card grids) are excluded — their
+   minmax() already reflows responsively and forcing them to one column would
+   make a tablet-width screen show one card per row for no reason. */
+@media (max-width: 860px) {
+  [style*="grid-template-columns"]:not([style*="auto-fill"]):not([style*="auto-fit"]) {
+    grid-template-columns: 1fr !important; gap: 28px !important;
+  }
+}
+@media (min-width: 861px) and (max-width: 1100px) {
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns:repeat(4,1fr)"],
+  [style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: repeat(2,1fr) !important; }
+}
+
+/* ---------- Index hero: floating brew card + dark info panel ---------- */
+/* These two blocks use absolute positioning / grid-column placement that
+   assumes a wide two-column hero — both break past mobile/tablet width. */
+@media (max-width: 860px) {
+  [data-hero] [style*="justify-self:end"] {
+    grid-column: 1 / -1 !important; grid-row: auto !important; justify-self: stretch !important; max-width: none !important;
+  }
+  [data-hero] [style*="grid-column:1 / span 2"] { grid-row: auto !important; }
+  [data-hero] [style*="bottom:-42px"] {
+    position: static !important; left: auto !important; bottom: auto !important;
+    margin-top: 20px !important; width: 100% !important; box-sizing: border-box !important;
+  }
+}
+
+/* ---------- Gallery "methods" card: image-left/text-right flex row ---------- */
+@media (max-width: 860px) {
+  div[style*="display:flex"]:has(> [style*="width:42%"]) { flex-direction: column !important; }
+  [style*="width:42%"][style*="aspect-ratio:4/5"] { width: 100% !important; aspect-ratio: 16/10 !important; }
+}

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Our Story – DumbBrew</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -14,6 +16,8 @@
 <script src="./cart-nav.js"></script>
 <script src="./wishlist-nav.js"></script>
 <script src="./search.js"></script>
+<link rel="stylesheet" href="./responsive.css">
+<script src="./mobile-nav.js"></script>
 </head>
 <body>
 <x-dc>
@@ -25,6 +29,7 @@ a:hover { color: #7d8a4c; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 [data-reveal] { opacity: 0; transform: translateY(32px); will-change: transform, opacity; }
 [data-nav] { transition: background-color 0.3s ease, box-shadow 0.3s ease; }
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] { opacity: 1 !important; transform: none !important; }
 }
@@ -82,6 +87,18 @@ a:hover { color: #7d8a4c; }
         <div style="width:44px; height:1px; background:#c99a54;"></div>
       </div>
       <h1 style="font-family:'Playfair Display',serif; font-size:clamp(34px,4.6vw,54px); font-weight:900; margin:0; letter-spacing:-1px;">{{ story.headline }}</h1>
+    </div>
+  </div>
+
+  <!-- MARQUEE -->
+  <div style="background:#faf5ea; overflow:hidden; padding:26px 0; border-bottom:1px solid #3b241418;">
+    <div style="display:flex; width:max-content; animation:marqueeScroll 24s linear infinite;">
+      <sc-for list="{{ marqueeWordsDouble }}" as="word" hint-placeholder-count="10">
+        <div style="display:flex; align-items:center; gap:24px; padding:0 32px; white-space:nowrap;">
+          <span style="font-family:'Playfair Display',serif; font-style:italic; font-weight:700; font-size:32px; color:#3b241422;">{{ word }}</span>
+          <span style="font-size:18px; color:#c99a54;">&#10022;</span>
+        </div>
+      </sc-for>
     </div>
   </div>
 
@@ -225,6 +242,10 @@ class Component extends DCLogic {
       logoUrl: window.assetUrl('db-logo.png'),
       story: this.state.story,
       milestones: this.state.milestones,
+      marqueeWordsDouble: (() => {
+        const words = ['Slow-Roasted', 'Small-Batch', 'No Pretense', 'Portland', 'Since 2019', 'Baked Before Sunrise'];
+        return words.concat(words);
+      })(),
     };
   }
 }

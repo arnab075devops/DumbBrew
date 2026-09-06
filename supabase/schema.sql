@@ -354,9 +354,13 @@ alter table sellers enable row level security;
 -- login, dashboard reads) — see sellers.controller.ts / adminSellers.controller.ts.
 drop policy if exists "sellers read own" on sellers;
 
+-- is_house is exposed here (not just id/store_name) so shop.html can tell
+-- DumbBrew's own listings apart from third-party sellers' — see the "Admin
+-- drink catalog" seed section near the end of this file for the tag-color
+-- convention that reads off of it (green = house, red = seller + their name).
 drop view if exists seller_directory;
 create view seller_directory as
-select id, store_name from sellers where status = 'approved';
+select id, store_name, is_house from sellers where status = 'approved';
 
 grant select on seller_directory to anon, authenticated;
 
@@ -684,3 +688,118 @@ alter table wishlist_items enable row level security;
 drop policy if exists "wishlist_items own" on wishlist_items;
 create policy "wishlist_items own" on wishlist_items for all
   using (auth.uid() = customer_id) with check (auth.uid() = customer_id);
+
+-- --- Admin drink catalog (shop.html groups) ---
+-- Cleaned up from asset/dataset/prices.csv + recipes.csv (see
+-- asset/dataset/catalog.csv for the normalized long-format version of that
+-- data) into DumbBrew's own house-seller listings. `category` is the tag
+-- shop.html groups products under — a group only appears once at least one
+-- product carries it, so these five categories "activate" as soon as this
+-- seed runs. shop.html colors this tag green for house_seller listings and
+-- red (plus the store name) for anyone else's, using seller_directory's
+-- is_house column above.
+--
+-- Safe to re-run: the house seller is looked up (not re-created — see
+-- seed-house-seller.ts for the original), and both inserts skip rows that
+-- already exist by name.
+--
+-- Each of the two inserts below repeats the same `drink_data` CTE literal
+-- rather than sharing one temp table — Supabase's SQL editor (and any
+-- PgBouncer-in-transaction-mode pooler) isn't guaranteed to run consecutive
+-- statements on the same session, so a temp table created by an earlier
+-- statement can vanish before a later one runs ("relation ... does not
+-- exist"). A CTE only lives for the one statement it's written in, so it
+-- can't be affected by that.
+insert into sellers (store_name, email, owner_full_name, status, is_house, decided_at, decided_by)
+select 'DumbBrew', 'house@dumbbrew.example', 'DumbBrew', 'approved', true, now(), 'schema-seed'
+where not exists (select 1 from sellers where is_house);
+
+with drink_data (name, category, description, sort, opt1_title, opt1_price, opt2_title, opt2_price, opt3_title, opt3_price) as (
+  values
+  ('Cappuccino', 'Hot Coffee', 'Espresso and steamed milk under a thick cap of foam.', 101, 'Small', 4.10, 'Medium', 4.80, 'Large', 5.50),
+  ('Latte', 'Hot Coffee', 'Espresso and steamed milk, gently poured.', 102, 'Small', 4.00, 'Medium', 4.70, 'Large', 5.50),
+  ('Signature House Latte', 'Hot Coffee', 'Our espresso blend with a double pump of house aroma syrup.', 103, 'Small', 5.40, 'Medium', 6.10, 'Large', 6.80),
+  ('Viennese Coffee', 'Hot Coffee', 'Espresso topped with chocolate and whipped cream.', 104, 'Small', 4.70, 'Medium', 5.40, 'Large', 6.10),
+  ('Filter Coffee', 'Hot Coffee', 'House blend, drip-brewed and honest.', 105, 'Small', 2.90, 'Medium', 3.60, 'Large', 4.30),
+  ('Espresso', 'Hot Coffee', 'Nine bars of pressure, ready in under 30 seconds.', 106, 'Simple', 1.80, 'Double', 2.50, null, null),
+  ('Macchiato', 'Hot Coffee', 'Espresso marked with a spoon of foam.', 107, 'Simple', 2.10, 'Double', 2.80, null, null),
+  ('Con Panna', 'Hot Coffee', 'Espresso topped with whipped cream.', 108, 'Simple', 2.50, 'Double', 3.20, null, null),
+  ('Ristretto', 'Hot Coffee', 'A short, concentrated pull — half the water, all the intensity.', 109, 'Simple', 1.80, 'Double', 2.50, null, null),
+  ('Lungo', 'Hot Coffee', 'A longer pull for a lighter, milder shot.', 110, 'Regular', 1.90, null, null, null, null),
+  ('Frappuccino', 'Cold Drinks', 'Blended iced coffee with a shot of vanilla aroma, whipped to a froth.', 201, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Iced Chocolate', 'Cold Drinks', 'Cold milk, real chocolate, and just enough ice to keep it honest.', 202, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Iced Chai Latte', 'Cold Drinks', 'Spiced chai over ice with a splash of milk foam.', 203, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Cold Brew Latte', 'Cold Drinks', '18-hour steep cold brew cut with milk over ice.', 204, 'Small', 4.50, 'Medium', 5.20, 'Large', 5.90),
+  ('Iced Coco Matcha', 'Cold Drinks', 'Matcha and coconut milk over ice, lightly sweetened.', 205, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Syrup Milkshake', 'Cold Drinks', 'Thick, cold, and sweetened the classic way.', 206, 'Small', 4.60, 'Medium', 5.30, 'Large', 6.00),
+  ('Natural Fruit Milkshake', 'Cold Drinks', 'Blended with real fruit extract, no syrup shortcuts.', 207, 'Small', 4.60, 'Medium', 5.30, 'Large', 6.00),
+  ('Passion Fruit & Citrus Iced Tea', 'Cold Drinks', 'Black tea infused with passion fruit and citrus, served cold.', 208, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Raspberry & Elderflower Iced Tea', 'Cold Drinks', 'Black tea infused with raspberry and elderflower, served cold.', 209, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Peach Iced Tea', 'Cold Drinks', 'Black tea infused with peach, served cold.', 210, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Special House Drink', 'Cold Drinks', 'Whatever the bar''s fixated on this week — always fruity, always cold.', 211, 'Small', 3.80, 'Medium', 4.50, 'Large', 5.20),
+  ('Kiwi Banana Mango Apple Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 301, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Strawberry Blueberry Blackcurrant Mango Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 302, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Passion Fruit Guava Pineapple Aloe Vera Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 303, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Orange Juice', 'Smoothies & Juices', 'Freshly pressed, nothing added.', 304, 'Small', 3.90, 'Medium', 4.60, 'Large', 5.30),
+  ('Mocha', 'Hot Chocolate & Specialty', 'Espresso, real chocolate, and steamed milk.', 401, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Chai Latte', 'Hot Chocolate & Specialty', 'Spiced chai concentrate and steamed milk.', 402, 'Small', 4.70, 'Medium', 5.40, 'Large', 6.10),
+  ('Coco Matcha', 'Hot Chocolate & Specialty', 'Matcha whisked with coconut milk.', 403, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Hot Chocolate', 'Hot Chocolate & Specialty', 'Real melted chocolate, not powder.', 404, 'Small', 4.00, 'Medium', 4.70, 'Large', 5.40),
+  ('Hot White Chocolate', 'Hot Chocolate & Specialty', 'Steamed milk and white chocolate, none of the bitterness.', 405, 'Small', 4.20, 'Medium', 4.90, 'Large', 5.60),
+  ('Herbal Tea', 'Tea', 'Your choice of loose-leaf, steeped fresh.', 501, 'Small', 3.10, 'Medium', 3.40, 'Large', 3.80)
+)
+insert into products (seller_id, name, description, price, category, active, sort)
+select (select id from sellers where is_house limit 1), d.name, d.description,
+  coalesce(d.opt2_price, d.opt1_price, d.opt3_price), d.category, true, d.sort
+from drink_data d
+where not exists (
+  select 1 from products p
+  where p.name = d.name and p.seller_id = (select id from sellers where is_house limit 1)
+);
+
+with drink_data (name, category, description, sort, opt1_title, opt1_price, opt2_title, opt2_price, opt3_title, opt3_price) as (
+  values
+  ('Cappuccino', 'Hot Coffee', 'Espresso and steamed milk under a thick cap of foam.', 101, 'Small', 4.10, 'Medium', 4.80, 'Large', 5.50),
+  ('Latte', 'Hot Coffee', 'Espresso and steamed milk, gently poured.', 102, 'Small', 4.00, 'Medium', 4.70, 'Large', 5.50),
+  ('Signature House Latte', 'Hot Coffee', 'Our espresso blend with a double pump of house aroma syrup.', 103, 'Small', 5.40, 'Medium', 6.10, 'Large', 6.80),
+  ('Viennese Coffee', 'Hot Coffee', 'Espresso topped with chocolate and whipped cream.', 104, 'Small', 4.70, 'Medium', 5.40, 'Large', 6.10),
+  ('Filter Coffee', 'Hot Coffee', 'House blend, drip-brewed and honest.', 105, 'Small', 2.90, 'Medium', 3.60, 'Large', 4.30),
+  ('Espresso', 'Hot Coffee', 'Nine bars of pressure, ready in under 30 seconds.', 106, 'Simple', 1.80, 'Double', 2.50, null, null),
+  ('Macchiato', 'Hot Coffee', 'Espresso marked with a spoon of foam.', 107, 'Simple', 2.10, 'Double', 2.80, null, null),
+  ('Con Panna', 'Hot Coffee', 'Espresso topped with whipped cream.', 108, 'Simple', 2.50, 'Double', 3.20, null, null),
+  ('Ristretto', 'Hot Coffee', 'A short, concentrated pull — half the water, all the intensity.', 109, 'Simple', 1.80, 'Double', 2.50, null, null),
+  ('Lungo', 'Hot Coffee', 'A longer pull for a lighter, milder shot.', 110, 'Regular', 1.90, null, null, null, null),
+  ('Frappuccino', 'Cold Drinks', 'Blended iced coffee with a shot of vanilla aroma, whipped to a froth.', 201, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Iced Chocolate', 'Cold Drinks', 'Cold milk, real chocolate, and just enough ice to keep it honest.', 202, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Iced Chai Latte', 'Cold Drinks', 'Spiced chai over ice with a splash of milk foam.', 203, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Cold Brew Latte', 'Cold Drinks', '18-hour steep cold brew cut with milk over ice.', 204, 'Small', 4.50, 'Medium', 5.20, 'Large', 5.90),
+  ('Iced Coco Matcha', 'Cold Drinks', 'Matcha and coconut milk over ice, lightly sweetened.', 205, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Syrup Milkshake', 'Cold Drinks', 'Thick, cold, and sweetened the classic way.', 206, 'Small', 4.60, 'Medium', 5.30, 'Large', 6.00),
+  ('Natural Fruit Milkshake', 'Cold Drinks', 'Blended with real fruit extract, no syrup shortcuts.', 207, 'Small', 4.60, 'Medium', 5.30, 'Large', 6.00),
+  ('Passion Fruit & Citrus Iced Tea', 'Cold Drinks', 'Black tea infused with passion fruit and citrus, served cold.', 208, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Raspberry & Elderflower Iced Tea', 'Cold Drinks', 'Black tea infused with raspberry and elderflower, served cold.', 209, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Peach Iced Tea', 'Cold Drinks', 'Black tea infused with peach, served cold.', 210, 'Small', 3.50, 'Medium', 4.20, 'Large', 4.90),
+  ('Special House Drink', 'Cold Drinks', 'Whatever the bar''s fixated on this week — always fruity, always cold.', 211, 'Small', 3.80, 'Medium', 4.50, 'Large', 5.20),
+  ('Kiwi Banana Mango Apple Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 301, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Strawberry Blueberry Blackcurrant Mango Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 302, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Passion Fruit Guava Pineapple Aloe Vera Smoothie', 'Smoothies & Juices', 'Blended fresh, no added sugar needed.', 303, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Orange Juice', 'Smoothies & Juices', 'Freshly pressed, nothing added.', 304, 'Small', 3.90, 'Medium', 4.60, 'Large', 5.30),
+  ('Mocha', 'Hot Chocolate & Specialty', 'Espresso, real chocolate, and steamed milk.', 401, 'Small', 4.90, 'Medium', 5.60, 'Large', 6.30),
+  ('Chai Latte', 'Hot Chocolate & Specialty', 'Spiced chai concentrate and steamed milk.', 402, 'Small', 4.70, 'Medium', 5.40, 'Large', 6.10),
+  ('Coco Matcha', 'Hot Chocolate & Specialty', 'Matcha whisked with coconut milk.', 403, 'Small', 5.00, 'Medium', 5.70, 'Large', 6.40),
+  ('Hot Chocolate', 'Hot Chocolate & Specialty', 'Real melted chocolate, not powder.', 404, 'Small', 4.00, 'Medium', 4.70, 'Large', 5.40),
+  ('Hot White Chocolate', 'Hot Chocolate & Specialty', 'Steamed milk and white chocolate, none of the bitterness.', 405, 'Small', 4.20, 'Medium', 4.90, 'Large', 5.60),
+  ('Herbal Tea', 'Tea', 'Your choice of loose-leaf, steeped fresh.', 501, 'Small', 3.10, 'Medium', 3.40, 'Large', 3.80)
+)
+insert into product_variants (product_id, title, price, position)
+select p.id, x.title, x.price, x.position
+from products p
+join drink_data d on d.name = p.name
+cross join lateral (values
+  (d.opt1_title, d.opt1_price, 0),
+  (d.opt2_title, d.opt2_price, 1),
+  (d.opt3_title, d.opt3_price, 2)
+) as x(title, price, position)
+where p.seller_id = (select id from sellers where is_house limit 1)
+  and x.title is not null
+  and not exists (select 1 from product_variants pv where pv.product_id = p.id and pv.title = x.title);

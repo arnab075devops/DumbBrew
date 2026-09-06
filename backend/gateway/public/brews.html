@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>All Brews – DumbBrew</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -14,6 +16,8 @@
 <script src="./cart-nav.js"></script>
 <script src="./wishlist-nav.js"></script>
 <script src="./search.js"></script>
+<link rel="stylesheet" href="./responsive.css">
+<script src="./mobile-nav.js"></script>
 </head>
 <body>
 <x-dc>
@@ -112,6 +116,14 @@ a:hover { color: #7d8a4c; }
         </div>
       </sc-for>
     </div>
+  </div>
+
+  <!-- ORDER CTA -->
+  <div style="padding:0 72px 150px; text-align:center;">
+    <div style="width:44px; height:1px; background:#8a5527; margin:0 auto 26px;"></div>
+    <h2 style="font-family:'Playfair Display',serif; font-size:clamp(28px,3.2vw,44px); font-weight:700; margin:0 0 20px; color:#17100a; letter-spacing:-0.5px;">Found your next order?</h2>
+    <p style="font-size:16px; color:#5a4128; margin:0 0 36px; font-weight:300;">Order ahead and we'll have it waiting on the counter.</p>
+    <a href="./shop.html" style="text-decoration:none; padding:18px 40px; background:#17100a; color:#f0e5d1; border-radius:1px; font-weight:500; font-size:13.5px; letter-spacing:1.5px; text-transform:uppercase; display:inline-block; transition:transform 0.35s ease, box-shadow 0.35s ease;" style-hover="transform:translateY(-3px); box-shadow:0 16px 34px #17100a33;">Order Online</a>
   </div>
 
   <!-- FOOTER -->

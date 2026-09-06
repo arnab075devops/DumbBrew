@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Visit – DumbBrew</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -16,6 +18,8 @@
 <script src="./search.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<link rel="stylesheet" href="./responsive.css">
+<script src="./mobile-nav.js"></script>
 </head>
 <body>
 <x-dc>
@@ -123,6 +127,18 @@ a:hover { color: #7d8a4c; }
         <div style="font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#17100a; margin-bottom:12px;">Large groups</div>
         <p style="font-size:15px; line-height:1.8; color:#5a4128; font-weight:300; margin:0;">Six or more, give us a heads up so we can actually keep up. The back table seats ten.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- PULL QUOTE -->
+  <div data-reveal="true" style="background:#e7dac2; padding:0 72px 150px; text-align:center;">
+    <div style="max-width:760px; margin:0 auto; background:#17100a; color:#f0e5d1; padding:clamp(40px,5vw,72px); box-shadow:0 30px 60px #17100a2e;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:24px;">
+        <div style="width:44px; height:1px; background:#c99a54;"></div>
+        <div style="font-size:12px; letter-spacing:5px; text-transform:uppercase; color:#c99a54; font-weight:500;">From The Regulars</div>
+        <div style="width:44px; height:1px; background:#c99a54;"></div>
+      </div>
+      <p style="font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(20px,2.4vw,28px); line-height:1.5; margin:0;">"It's the kind of place that remembers your order and roasts you about it anyway. Ten out of ten, would get judged again."</p>
     </div>
   </div>
 

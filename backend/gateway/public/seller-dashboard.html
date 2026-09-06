@@ -7,10 +7,20 @@
 <script src="./config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
-.wrap { max-width:760px; margin:0 auto; padding:100px 24px 120px; }
+a { color:#8a5527; }
+.mini-nav { display:flex; align-items:center; justify-content:space-between; padding:20px clamp(20px,4vw,72px); background:#17100a; color:#f0e5d1; }
+.mini-nav .brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+.mini-nav .brand img { width:34px; height:34px; object-fit:contain; display:block; }
+.mini-nav .brand-name { font-family:'Playfair Display',serif; font-weight:700; font-size:17px; letter-spacing:1px; }
+.mini-nav .tag { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#c99a54; margin-left:10px; padding-left:14px; border-left:1px solid #f0e5d133; }
+.mini-nav .back { text-decoration:none; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#f0e5d1aa; }
+.mini-nav .back:hover { color:#c99a54; }
+.wrap { max-width:760px; margin:0 auto; padding:48px clamp(20px,4vw,40px) 120px; }
 .card { background:#faf5ea; border-radius:14px; padding:32px; box-shadow:0 2px 8px #24191008; margin-bottom:28px; }
 h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; margin:0 0 4px; color:#17100a; }
 h2 { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin:0 0 16px; color:#17100a; }
@@ -71,11 +81,34 @@ button.secondary { padding:9px 14px; background:#fff; color:#5a4128; border:1px 
 .chart-card { background:#faf5ea; border:1px solid #3b241418; border-radius:10px; padding:16px 18px 8px; margin-bottom:24px; }
 .chart-title { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#5a4128; margin-bottom:10px; }
 .chart-wrap { position:relative; height:220px; }
+@media (max-width: 720px) {
+  .mini-nav { padding:16px 20px; flex-wrap:wrap; gap:10px; }
+  .wrap { padding:32px 16px 80px; }
+  .card { padding:22px; }
+  .two-col { grid-template-columns:1fr; }
+  .variant-row { grid-template-columns:1fr 1fr; }
+  .variant-row .remove-x { justify-self:end; }
+  .summary-grid { grid-template-columns:1fr; }
+  .product-row, .sale-row { flex-wrap:wrap; }
+  .sales-controls { flex-direction:column; align-items:stretch; }
+  .sales-controls input[type="date"] { width:100%; }
+  .tabs { gap:8px; }
+  .tab-btn { flex:1 1 auto; text-align:center; }
+}
 </style>
+<link rel="stylesheet" href="./responsive.css">
 </head>
 <body>
+<div class="mini-nav">
+  <a href="./index.html" class="brand">
+    <img data-asset="db-logo.png" src="./assets/db-logo.png" alt="DumbBrew logo"/>
+    <span class="brand-name">DumbBrew</span>
+    <span class="tag">Seller</span>
+  </a>
+  <a href="./account.html" class="back">&larr; Back to your account</a>
+</div>
+<script>(function(){var els=document.querySelectorAll('[data-asset]');for(var i=0;i<els.length;i++){els[i].src=window.assetUrl(els[i].getAttribute('data-asset'));}})();</script>
 <div class="wrap">
-  <a href="./account.html" style="display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none;">&larr; Back to your account</a>
   <div id="content">Loading&hellip;</div>
 </div>
 <script>

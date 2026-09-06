@@ -5,14 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your Wishlist – DumbBrew</title>
 <script src="./config.js"></script>
+<script src="./support.js"></script>
+<script src="./auth-nav.js"></script>
+<script src="./cart-nav.js"></script>
+<script src="./wishlist-nav.js"></script>
+<script src="./search.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 body { margin:0; min-height:100vh; background:#f0e5d1; color:#241a10; font-family:'Poppins',sans-serif; }
-.wrap { max-width:1000px; margin:0 auto; padding:100px 24px 120px; }
-a.home { display:inline-block; margin-bottom:28px; font-size:13px; color:#8a5527; text-decoration:none; }
-h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; margin:0 0 8px; color:#17100a; }
-.sub { font-size:14px; color:#5a412899; margin-bottom:36px; }
+a { color:#8a5527; }
+.site-nav { display:flex; align-items:center; justify-content:space-between; padding:20px clamp(20px,4vw,72px); position:sticky; top:0; background:#f0e5d1b3; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid #3b241414; z-index:20; color:#241a10; flex-wrap:wrap; gap:16px; }
+.site-nav .brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.site-nav .brand img { width:40px; height:40px; object-fit:contain; display:block; }
+.site-nav .brand-name { font-family:'Playfair Display',serif; font-weight:700; font-size:20px; letter-spacing:1px; color:#17100a; }
+.site-nav .links { display:flex; gap:28px; align-items:center; flex-wrap:wrap; }
+.site-nav .links a { text-decoration:none; font-size:12.5px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:#3b2414cc; transition:color 0.3s ease; }
+.site-nav .links a:hover, .site-nav .links a.active { color:#8a5527; }
+.icon-btn { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid #3b241433; color:#3b2414cc; transition:color 0.3s ease, border-color 0.3s ease; flex:none; position:relative; text-decoration:none; background:none; cursor:pointer; padding:0; }
+.icon-btn:hover { color:#8a5527; border-color:#8a552766; }
+.page-head { background:#17100a; color:#f0e5d1; padding:64px clamp(20px,4vw,72px) 52px; }
+.page-head .eyebrow { font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#c99a54; font-weight:500; margin-bottom:14px; }
+.page-head h1 { font-family:'Playfair Display',serif; font-size:clamp(28px,4vw,44px); font-weight:900; margin:0; letter-spacing:-1px; color:#f0e5d1; }
+.page-head p { font-size:14px; color:#f0e5d1aa; margin:14px 0 0; font-weight:300; max-width:560px; line-height:1.7; }
+.site-footer { background:#17100a; color:#f0e5d1; padding:48px clamp(20px,4vw,72px); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+.site-footer .brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+.site-footer .brand img { width:28px; height:28px; object-fit:contain; display:block; }
+.site-footer .brand span { font-family:'Playfair Display',serif; font-weight:700; font-size:15px; letter-spacing:1px; }
+.site-footer .copy { font-size:11px; color:#f0e5d166; letter-spacing:0.5px; }
+.site-footer .links { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+.site-footer .links a { text-decoration:none; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#f0e5d1aa; }
+.site-footer .partner { color:#f0e5d1; border:1px solid #f0e5d155; padding:8px 16px; border-radius:1px; letter-spacing:1.5px; }
+.wrap { max-width:1000px; margin:0 auto; padding:56px clamp(20px,4vw,40px) 120px; }
 .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:22px; }
 .pcard { background:#faf5ea; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px #24191008; display:flex; flex-direction:column; position:relative; }
 .pcard img { width:100%; aspect-ratio:1; object-fit:cover; background:#3b2414; display:block; }
@@ -29,16 +54,75 @@ h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; marg
 .msg.err { color:#a13a2e; }
 .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:#17100a; color:#f0e5d1; padding:12px 22px; border-radius:4px; font-size:13px; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
 .toast.show { opacity:1; }
+@media (max-width: 640px) {
+  .site-nav { padding:14px 16px; }
+  .page-head { padding:40px 16px 32px; }
+  .wrap { padding:28px 16px 80px; }
+  .site-footer { padding:32px 16px; flex-direction:column; text-align:center; }
+}
 </style>
+<link rel="stylesheet" href="./responsive.css">
+<script src="./mobile-nav.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <a class="home" href="./index.html">&larr; Back to DumbBrew</a>
+<div class="site-nav" data-nav="true">
+  <a href="./index.html" class="brand">
+    <img data-asset="db-logo.png" src="./assets/db-logo.png" alt="DumbBrew logo"/>
+    <span class="brand-name">DumbBrew</span>
+  </a>
+  <div class="links">
+    <a href="./brews.html">Brews</a>
+    <a href="./menu.html">Menu</a>
+    <a href="./story.html">Story</a>
+    <a href="./gallery.html">Gallery</a>
+    <a href="./shop.html">Shop</a>
+    <a href="./tutorials.html">Tutorials</a>
+    <a href="./visit.html">Visit</a>
+    <button type="button" class="icon-btn" data-search-toggle="true" aria-label="Search">
+      <span style="position:relative; width:15px; height:15px; display:block;">
+        <span style="position:absolute; top:0; left:0; width:10px; height:10px; border:1.5px solid currentColor; border-radius:50%; box-sizing:border-box;"></span>
+        <span style="position:absolute; bottom:0; right:0; width:6px; height:2px; background:currentColor; transform:rotate(45deg); transform-origin:right center;"></span>
+      </span>
+    </button>
+    <a href="./wishlist.html" class="icon-btn active" aria-label="Wishlist" style="font-size:15px; line-height:1;">&#9825;</a>
+    <a href="./login.html" class="icon-btn" aria-label="Account">
+      <span style="position:relative; width:15px; height:15px; display:block;">
+        <span style="position:absolute; top:0; left:3.5px; width:8px; height:8px; border-radius:50%; background:currentColor;"></span>
+        <span style="position:absolute; bottom:-1px; left:0; width:15px; height:8px; border-radius:8px 8px 0 0; background:currentColor; overflow:hidden;"></span>
+      </span>
+    </a>
+    <a href="./cart.html" class="icon-btn" aria-label="Cart">
+      <span style="position:relative; width:16px; height:14px; display:block;">
+        <span style="position:absolute; top:0; left:1px; width:12px; height:8px; border:1.5px solid currentColor; border-top:none; border-radius:0 0 2px 2px; box-sizing:border-box;"></span>
+        <span style="position:absolute; top:-3px; left:3px; width:8px; height:5px; border:1.5px solid currentColor; border-bottom:none; border-radius:3px 3px 0 0; box-sizing:border-box;"></span>
+        <span style="position:absolute; bottom:-2px; left:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+        <span style="position:absolute; bottom:-2px; right:2px; width:3px; height:3px; border-radius:50%; background:currentColor;"></span>
+      </span>
+    </a>
+  </div>
+</div>
+<script>(function(){var els=document.querySelectorAll('[data-asset]');for(var i=0;i<els.length;i++){els[i].src=window.assetUrl(els[i].getAttribute('data-asset'));}})();</script>
+<div class="page-head">
+  <div class="eyebrow">Saved For Later</div>
   <h1>Your Wishlist</h1>
-  <div class="sub">Saved from any seller. Cart checkout still needs items from a single seller at a time.</div>
+  <p>Saved from any seller. Cart checkout still needs items from a single seller at a time.</p>
+</div>
+<div class="wrap">
   <div id="content">Loading&hellip;</div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="site-footer">
+  <a href="./index.html" class="brand">
+    <img data-asset="db-logo.png" src="./assets/db-logo.png" alt="DumbBrew logo"/>
+    <span>DumbBrew</span>
+  </a>
+  <div class="copy">&copy; 2026 DumbBrew Coffee &amp; Bakery. Made with love and too much caffeine.</div>
+  <div class="links">
+    <a href="./seller-apply.html" class="partner">Partner With Us</a>
+    <a href="./terms.html">Terms</a>
+    <a href="./data-policy.html">Data Policy</a>
+  </div>
+</div>
 <script>
 (function () {
   const accessToken = sessionStorage.getItem('dumbbrew_access_token');
