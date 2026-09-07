@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { supabaseJson, supabaseRequest } from "../lib/supabase.js";
 import { verifyPaymentSignature, verifyWebhookSignature } from "../lib/razorpay.js";
+import { sendReceiptEmail } from "../lib/mailer.js";
 
 const verifySchema = z.object({
   razorpayOrderId: z.string(),
@@ -14,7 +15,7 @@ const verifySchema = z.object({
 // the customer's wishlist. Idempotent (guarded on payment_status !== "paid")
 // so it's safe to run twice if both the client verify call and the webhook
 // end up confirming the same order.
-async function confirmOrderPaid(order: { id: number; customer_id: string; payment_status: string }, razorpayPaymentId: string | undefined) {
+async function confirmOrderPaid(order: { id: number; customer_id: string; payment_status: string; amount: string }, razorpayPaymentId: string | undefined) {
   if (order.payment_status === "paid") return;
   await supabaseRequest(`orders?id=eq.${order.id}`, {
     method: "PATCH",
@@ -63,6 +64,33 @@ async function confirmOrderPaid(order: { id: number; customer_id: string; paymen
       { method: "DELETE" }
     );
   }
+
+  // Best-effort receipt email — a delivery failure here (bad SMTP creds,
+  // Gmail hiccup) must never roll back or fail the payment confirmation
+  // that already happened above, so it's swallowed and logged only.
+  try {
+    const customers = await supabaseJson<Array<{ email: string | null }>>(
+      `customers?id=eq.${order.customer_id}&select=email&limit=1`
+    );
+    const email = customers[0]?.email;
+    if (email) {
+      const lineItems = await supabaseJson<
+        Array<{ quantity: number; unit_price: string; products: { name: string } | null; product_variants: { title: string } | null }>
+      >(`order_items?order_id=eq.${order.id}&select=quantity,unit_price,products(name),product_variants(title)`);
+      await sendReceiptEmail(
+        email,
+        { id: order.id, amount: order.amount, razorpayPaymentId: razorpayPaymentId ?? null },
+        lineItems.map((line) => ({
+          productName: line.products?.name ?? "Product",
+          variantTitle: line.product_variants?.title ?? null,
+          quantity: line.quantity,
+          unitPrice: line.unit_price
+        }))
+      );
+    }
+  } catch (err) {
+    console.error(`failed to send payment receipt email for order ${order.id}:`, err);
+  }
 }
 
 // Razorpay's checkout.js hands the browser this order_id/payment_id/signature
@@ -82,8 +110,8 @@ export async function verifyPayment(req: FastifyRequest, reply: FastifyReply) {
   if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
     return reply.code(400).send({ error: "invalid_signature" });
   }
-  const orders = await supabaseJson<Array<{ id: number; customer_id: string; payment_status: string }>>(
-    `orders?razorpay_order_id=eq.${razorpayOrderId}&customer_id=eq.${req.customerId}&select=id,customer_id,payment_status&limit=1`
+  const orders = await supabaseJson<Array<{ id: number; customer_id: string; payment_status: string; amount: string }>>(
+    `orders?razorpay_order_id=eq.${razorpayOrderId}&customer_id=eq.${req.customerId}&select=id,customer_id,payment_status,amount&limit=1`
   );
   if (!orders[0]) return reply.code(404).send({ error: "order_not_found" });
   await confirmOrderPaid(orders[0], razorpayPaymentId);
@@ -118,8 +146,8 @@ export async function webhook(req: FastifyRequest, reply: FastifyReply) {
   if (!razorpayOrderId) return reply.code(200).send({ ok: true });
 
   if (event === "payment.captured") {
-    const orders = await supabaseJson<Array<{ id: number; customer_id: string; payment_status: string }>>(
-      `orders?razorpay_order_id=eq.${razorpayOrderId}&select=id,customer_id,payment_status&limit=1`
+    const orders = await supabaseJson<Array<{ id: number; customer_id: string; payment_status: string; amount: string }>>(
+      `orders?razorpay_order_id=eq.${razorpayOrderId}&select=id,customer_id,payment_status,amount&limit=1`
     );
     const order = orders[0];
     if (order) await confirmOrderPaid(order, razorpayPaymentId);

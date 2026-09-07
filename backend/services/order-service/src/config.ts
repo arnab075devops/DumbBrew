@@ -52,5 +52,10 @@ export const config = {
   // signed GETs for seller-application photos, so tutorial images
   // (meant to be publicly viewable once published) need a bucket that
   // actually has public access turned on.
-  r2TutorialsBucket: required("R2_TUTORIALS_BUCKET")
+  r2TutorialsBucket: required("R2_TUTORIALS_BUCKET"),
+
+  // Payment receipt emails (nodemailer, sent via Gmail SMTP) — EMAIL_PASS is
+  // a Gmail App Password, not the account's login password.
+  emailUser: required("EMAIL_USER"),
+  emailPass: required("EMAIL_PASS")
 };
